@@ -1,0 +1,88 @@
+services:
+  # ==========================================================================
+  # PostgreSQL - Banco de Dados Principal
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: projeto-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-projeto_db}
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      - "5432:5432"  # Exposto para config inicial (remover depois)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - projeto-network
+
+  # ==========================================================================
+  # FastAPI - Backend Application
+  # ==========================================================================
+  api:
+    build:
+      context: ./agents
+      dockerfile: Dockerfile
+    container_name: projeto-api
+    restart: unless-stopped
+    environment:
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-projeto_db}
+      
+      # FastAPI
+      FASTAPI_HOST: 0.0.0.0
+      FASTAPI_PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      
+      TZ: ${TZ:-America/Sao_Paulo}
+    expose:
+      - "8000"
+    volumes:
+      - ./templates:/app/templates:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - projeto-network
+
+  # ==========================================================================
+  # Nginx - Reverse Proxy
+  # ==========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: projeto-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - projeto-network
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+volumes:
+  postgres_data:
+    driver: local
+
+# ==============================================================================
+# Network
+# ==============================================================================
+networks:
+  projeto-network:
+    driver: bridge

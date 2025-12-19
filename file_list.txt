@@ -1,0 +1,23 @@
+total 120
+drwxr-xr-x 13 root root  4096 dez 15 01:06 .
+drwxr-xr-x  4 root root  4096 dez  9 18:13 ..
+drwxr-xr-x  2 root root  4096 dez  9 20:41 agents
+-rwxr-xr-x  1 root root  4423 dez 15 01:06 bacjup.sh
+drwxr-xr-x  4 root root  4096 dez  9 18:47 backups
+drwxr-xr-x  7 root root  4096 dez  9 18:16 data
+-rw-r--r--  1 root root  6341 dez 14 15:56 docker-compose.yml
+-rwxr-xr-x  1 root root  1006 dez 14 15:27 .env
+-rwxr-xr-x  1 root root   993 dez 14 15:24 env
+-rw-r--r--  1 root root  2927 dez  9 18:10 .env.example
+-rw-r--r--  1 root root   357 dez  9 18:10 .gitignore
+-rwxr-xr-x  1 root root 16656 dez 15 01:06 manager.sh
+drwxr-xr-x  2 root root  4096 dez  9 18:10 n8n-workflows
+-rwxr-xr-x  1 root root  8512 dez 15 01:06 patchdocassemble.sh
+drwxr-xr-x  2 root root  4096 dez  9 18:16 postgres_backups
+-rw-r--r--  1 root root  2699 dez  9 18:10 README.md
+drwxr-xr-x  2 root root  4096 dez  9 18:10 scripts
+drwxr-xr-x  2 root root  4096 dez  9 18:16 shared
+drwxr-xr-x  2 root root  4096 dez 14 12:02 sql
+drwxr-xr-x  2 root root  4096 dez 14 18:55 templates
+drwxr-xr-x  2 root root  4096 dez  9 18:16 uploads
+drwxr-xr-x  2 root root  4096 dez  9 18:16 volume_backups

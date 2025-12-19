@@ -1,0 +1,70 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\geometry{a4paper, left=3cm, right=2cm, top=3cm, bottom=2cm}
+
+\begin{document}
+
+% CABEÇALHO
+\begin{center}
+    \includegraphics[width=0.3\textwidth]{{{logo_path}}}
+    
+    \vspace{1cm}
+    \textbf{\Large {{empresa_nome}}}
+    
+    \vspace{0.5cm}
+    \textbf{\large {{documento_titulo}}}
+\end{center}
+
+\vspace{1cm}
+
+% DADOS CADASTRAIS
+\begin{tabular}{ll}
+    \textbf{Nome:} & {{nome_completo}} \\
+    \textbf{CPF:} & {{cpf}} \\
+    \textbf{E-mail:} & {{email}} \\
+    \textbf{Telefone:} & {{telefone}} \\
+    \textbf{Endereço:} & {{endereco}} \\
+    \textbf{Cidade/UF:} & {{cidade}} / {{estado}} \\
+    \textbf{Data:} & {{data_emissao}} \\
+\end{tabular}
+
+\vspace{1cm}
+
+% CONTEÚDO PRINCIPAL
+\section*{Introdução}
+
+{{conteudo_introducao}}
+
+\vspace{1cm}
+
+% ASSINATURA
+\begin{flushright}
+    \includegraphics[width=0.2\textwidth]{{{assinatura_path}}}
+    
+    \vspace{0.5cm}
+    \rule{6cm}{0.5pt} \\
+    {{nome_responsavel}} \\
+    {{cargo_responsavel}}
+\end{flushright}
+
+% ANEXOS (se houver)
+{% if anexos %}
+\newpage
+\section*{Anexos}
+
+{% for anexo in anexos %}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{{{anexo.path}}}
+    \caption{{{anexo.descricao}}}
+    \label{fig:anexo{{loop.index}}}
+\end{figure}
+{% endfor %}
+{% endif %}
+
+\end{document}

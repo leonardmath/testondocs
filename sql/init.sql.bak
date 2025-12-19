@@ -1,0 +1,140 @@
+-- ============================================================================
+-- Schema Inicial - LaTeX Document Generator
+-- ============================================================================
+-- Este script cria as tabelas necessárias para o sistema
+-- Executado automaticamente no primeiro boot do PostgreSQL
+-- ============================================================================
+
+-- Criar database do NocoDB se não existir
+CREATE DATABASE IF NOT EXISTS nocodb;
+
+-- Conectar ao banco principal
+\c projeto_db;
+
+-- Extensões necessárias
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================================
+-- TABELA: projects
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    external_id VARCHAR(255) UNIQUE,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    payload_json JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_project_status CHECK (status IN ('pending', 'processing', 'completed', 'failed'))
+);
+
+CREATE INDEX idx_projects_status ON projects(status);
+CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
+
+-- ============================================================================
+-- TABELA: tasks
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS tasks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    task_type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    dependencies TEXT[],
+    retry_count INTEGER DEFAULT 0,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    
+    CONSTRAINT chk_task_status CHECK (status IN ('pending', 'running', 'completed', 'failed')),
+    CONSTRAINT chk_task_type CHECK (task_type IN ('ingest', 'process_chatgpt', 'process_maps', 'render_tex', 'compile_pdf'))
+);
+
+CREATE INDEX idx_tasks_project_id ON tasks(project_id);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_task_type ON tasks(task_type);
+
+-- ============================================================================
+-- TABELA: artifacts
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS artifacts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+    artifact_type VARCHAR(50) NOT NULL,
+    minio_path TEXT NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_artifact_type CHECK (artifact_type IN ('map', 'photo', 'document', 'tex', 'pdf'))
+);
+
+CREATE INDEX idx_artifacts_project_id ON artifacts(project_id);
+CREATE INDEX idx_artifacts_artifact_type ON artifacts(artifact_type);
+
+-- ============================================================================
+-- TABELA: dictionary
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS dictionary (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    key VARCHAR(255) NOT NULL,
+    value TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(project_id, key)
+);
+
+CREATE INDEX idx_dictionary_project_id ON dictionary(project_id);
+CREATE INDEX idx_dictionary_key ON dictionary(key);
+
+-- ============================================================================
+-- FUNÇÃO: Atualizar timestamp automaticamente
+-- ============================================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================================
+-- DADOS INICIAIS (opcional para testes)
+-- ============================================================================
+-- Inserir projeto de exemplo
+INSERT INTO projects (external_id, status, payload_json) VALUES
+    ('PROJETO-TESTE-001', 'pending', '{"tipo": "relatorio_legal", "cliente": "Teste SA"}');
+
+-- ============================================================================
+-- VIEWS úteis para NocoDB
+-- ============================================================================
+CREATE OR REPLACE VIEW vw_projects_summary AS
+SELECT 
+    p.id,
+    p.external_id,
+    p.status,
+    p.created_at,
+    p.updated_at,
+    COUNT(DISTINCT t.id) as total_tasks,
+    COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) as completed_tasks,
+    COUNT(DISTINCT a.id) as total_artifacts
+FROM projects p
+LEFT JOIN tasks t ON t.project_id = p.id
+LEFT JOIN artifacts a ON a.project_id = p.id
+GROUP BY p.id, p.external_id, p.status, p.created_at, p.updated_at;
+
+-- ============================================================================
+-- Permissões
+-- ============================================================================
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO admin;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO admin;
+
+-- Mensagem de sucesso
+DO $$
+BEGIN
+    RAISE NOTICE 'Schema criado com sucesso!';
+END $$;

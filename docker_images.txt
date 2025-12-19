@@ -1,0 +1,8 @@
+IMAGE                       ID             DISK USAGE   CONTENT SIZE   EXTRA
+amir20/dozzle:latest        9477f50189e5       75.7MB         17.6MB   U    
+engeteston-agents:latest    dec957b62790       9.18GB         2.74GB   U    
+jhpyle/docassemble:latest   8297500155d9       15.9GB         4.43GB   U    
+minio/minio:latest          14cea493d9a3        241MB         62.2MB   U    
+n8nio/n8n:latest            d9162b9b1517       1.74GB          288MB   U    
+nocodb/nocodb:latest        8fd57018accf        877MB          209MB   U    
+postgres:16-alpine          a5074487380d        395MB          111MB   U    
