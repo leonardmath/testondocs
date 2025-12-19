@@ -51,6 +51,7 @@ services:
       - "8000"
     volumes:
       - ./templates:/app/templates:ro
+      - ./data/backups:/app/data/backups
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,8 +1,11 @@
 FROM python:3.11-slim
 
-# Instalar LaTeX e dependências do sistema
+# Instalar apenas pacotes LaTeX essenciais (muito mais leve que texlive-full)
 RUN apt-get update && apt-get install -y \
-    texlive-full \
+    texlive-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-lang-portuguese \
     curl \
     libpq-dev \
     gcc \
