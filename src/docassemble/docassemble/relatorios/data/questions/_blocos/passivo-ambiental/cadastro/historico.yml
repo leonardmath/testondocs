@@ -1,0 +1,167 @@
+---
+# =============================================================================
+# 🧱 BLOCO: HISTÓRICO DA ÁREA
+# =============================================================================
+# Coleta informações sobre o histórico de operação do empreendimento
+# Usado em: Passivo Ambiental
+# =============================================================================
+
+id: historico
+question: |
+  📜 Histórico da Área
+subquestion: |
+  Informe o histórico de operação do empreendimento.
+  
+  <div class="alert alert-info">
+    💡 **Importante:** Estas informações são essenciais para o relatório de passivo ambiental.
+  </div>
+
+fields:
+  - note: |
+      #### 🏁 Início das Atividades
+      
+  - "Ano de início das atividades": historico.ano_inicio
+    datatype: integer
+    required: False
+    min: 1900
+    max: 2025
+    hint: "Ex: 1971"
+    
+  - "Atividade inicial": historico.atividade_inicial
+    datatype: area
+    required: False
+    hint: "Descreva a atividade inicial do empreendimento"
+    
+  - note: |
+      ---
+      #### 🔄 Reformas e Modernizações
+      
+  - "Houve reformas ou modernizações?": historico.teve_reformas
+    datatype: yesnoradio
+    required: False
+    
+  - "Descreva as principais reformas": historico.descricao_reformas
+    datatype: area
+    required: False
+    show if: historico.teve_reformas
+    rows: 6
+    hint: "Descreva ano, tipo de reforma e principais alterações"
+    
+  - note: |
+      ---
+      #### 🛢️ Histórico de Tanques
+      
+  - "Houve substituição de tanques?": historico.substituiu_tanques
+    datatype: yesnoradio
+    required: False
+    
+  - "Descrição das substituições de tanques": historico.tanques_substituicoes
+    datatype: area
+    required: False
+    show if: historico.substituiu_tanques
+    rows: 4
+    hint: "Ano, tipo de tanque antigo, tipo de tanque novo, motivo"
+    
+  - note: |
+      ---
+      #### 🏷️ Histórico de Bandeiras
+      
+  - "Bandeira original": historico.bandeira_original
+    required: False
+    code: lista_bandeiras
+    
+  - "Ano da bandeira original": historico.bandeira_original_ano
+    datatype: integer
+    required: False
+    show if: historico.bandeira_original
+    min: 1900
+    max: 2025
+    
+  - "Houve mudança de bandeira?": historico.mudou_bandeira
+    datatype: yesnoradio
+    required: False
+    
+  - "Bandeira atual": historico.bandeira_atual
+    required: False
+    show if: historico.mudou_bandeira
+    code: lista_bandeiras
+    
+  - "Ano da mudança de bandeira": historico.bandeira_mudanca_ano
+    datatype: integer
+    required: False
+    show if: historico.mudou_bandeira
+    min: 1900
+    max: 2025
+    
+  - note: |
+      ---
+      #### ⚠️ Histórico de Incidentes
+      
+  - "Houve vazamentos ou incidentes ambientais?": historico.teve_incidentes
+    datatype: yesnoradio
+    required: False
+    
+  - "Descrição dos incidentes": historico.descricao_incidentes
+    datatype: area
+    required: False
+    show if: historico.teve_incidentes
+    rows: 4
+    hint: "Data, tipo de incidente, ações tomadas"
+    
+  - "Houve autuações ambientais?": historico.teve_autuacoes
+    datatype: yesnoradio
+    required: False
+    
+  - "Descrição das autuações": historico.descricao_autuacoes
+    datatype: area
+    required: False
+    show if: historico.teve_autuacoes
+    rows: 3
+    
+  - note: |
+      ---
+      #### 🏗️ Layout Físico
+      
+  - "O layout físico foi modificado ao longo do tempo?": historico.layout_modificado
+    datatype: yesnoradio
+    required: False
+    
+  - "Descreva as modificações no layout": historico.layout_descricao
+    datatype: area
+    required: False
+    show if: historico.layout_modificado
+    rows: 3
+
+section: cadastro
+continue button field: historico_preenchido
+---
+# Código para extrair dados do bloco
+code: |
+  def extrair_historico():
+    """Extrai histórico para envio à API"""
+    dados = {
+      'ano_inicio': historico.ano_inicio if defined('historico.ano_inicio') else None,
+      'atividade_inicial': historico.atividade_inicial if defined('historico.atividade_inicial') else None,
+      'teve_reformas': historico.teve_reformas if defined('historico.teve_reformas') else None,
+      'descricao_reformas': historico.descricao_reformas if defined('historico.descricao_reformas') else None,
+      'substituiu_tanques': historico.substituiu_tanques if defined('historico.substituiu_tanques') else None,
+      'tanques_substituicoes': historico.tanques_substituicoes if defined('historico.tanques_substituicoes') else None,
+      'bandeira_original': historico.bandeira_original if defined('historico.bandeira_original') else None,
+      'bandeira_original_ano': historico.bandeira_original_ano if defined('historico.bandeira_original_ano') else None,
+      'mudou_bandeira': historico.mudou_bandeira if defined('historico.mudou_bandeira') else None,
+      'bandeira_atual': historico.bandeira_atual if defined('historico.bandeira_atual') else None,
+      'bandeira_mudanca_ano': historico.bandeira_mudanca_ano if defined('historico.bandeira_mudanca_ano') else None,
+      'teve_incidentes': historico.teve_incidentes if defined('historico.teve_incidentes') else None,
+      'descricao_incidentes': historico.descricao_incidentes if defined('historico.descricao_incidentes') else None,
+      'teve_autuacoes': historico.teve_autuacoes if defined('historico.teve_autuacoes') else None,
+      'descricao_autuacoes': historico.descricao_autuacoes if defined('historico.descricao_autuacoes') else None,
+      'layout_modificado': historico.layout_modificado if defined('historico.layout_modificado') else None,
+      'layout_descricao': historico.layout_descricao if defined('historico.layout_descricao') else None
+    }
+    
+    # Calcular tempo de operação
+    if dados['ano_inicio']:
+      from datetime import datetime
+      dados['anos_operacao'] = datetime.now().year - dados['ano_inicio']
+    
+    return dados

@@ -1,0 +1,377 @@
+---
+metadata:
+  title: "Passivo Ambiental – Posto de Combustível (Visualização)"
+  short title: "Passivo Ambiental"
+  version: "5.1.4"
+  description: "Sistema de visualização para coleta modular de dados de passivo ambiental"
+---
+include:
+  - docassemble.relatorios:data/questions/_config/base.yml
+  - docassemble.relatorios:data/questions/_config/listas-dados.yml
+  - docassemble.relatorios:data/questions/_blocos/_shared/navegacao.yml
+  - docassemble.relatorios:data/questions/_blocos/_shared/dados-cadastrais.yml
+  - docassemble.relatorios:data/questions/_blocos/_shared/endereco.yml
+  - docassemble.relatorios:data/questions/_blocos/_shared/contato.yml
+  - docassemble.relatorios:data/questions/_blocos/_shared/localizacao.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/cadastro/historico.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/localizacao/entorno.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/infraestrutura/empreendimento.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/infraestrutura/bombas.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/infraestrutura/servicos.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/infraestrutura/monitoramento.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/investigacao/ficha-vistoria.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/investigacao/mci.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/investigacao/sondagens.yml
+  - docassemble.relatorios:data/questions/_blocos/passivo-ambiental/anexos/anexos.yml
+---
+objects:
+  - dados_cadastrais: DAObject
+  - endereco: DAObject
+  - contato: DAObject
+  - localizacao: DAObject
+  - historico: DAObject
+  - entorno: DAObject
+  - empreendimento: DAObject
+  - bombas: DAObject
+  - servicos: DAObject
+  - monitoramento: DAObject
+  - vistoria: DAObject
+  - sistemas_seguranca_pistas: DAObject
+  - sistemas_seguranca_controles: DAObject
+  - sistemas_tratamento: DAObject
+  - infra_sanitaria: DAObject
+  - residuos: DAObject
+  - lavagem: DAObject
+  - mci: DAObject
+  - sondagens: DAList.using(object_type=DAObject)
+  - anexos: DAList.using(object_type=DAFileCollection)
+---
+code: |
+  from datetime import datetime
+  import random
+  import json
+
+  if not defined('fluxo_iniciado'):
+      def gerar_protocolo(prefixo):
+          ts = datetime.now().strftime("%Y%m%d%H%M%S")
+          rnd = random.randint(1000, 9999)
+          return f"{prefixo}{ts}{rnd}"
+
+      protocolo = gerar_protocolo("PAV")
+      inicio_entrevista = datetime.now()
+      fluxo_iniciado = True
+      modo_visualizacao = True
+---
+mandatory: True
+question: |
+  Laudo de Passivo Ambiental - MODO VISUALIZAÇÃO
+subquestion: |
+  **MODO DE VISUALIZAÇÃO**
+  
+  *Os dados coletados NÃO serão enviados para nenhuma API externa.*
+  
+  ---
+  
+  **Protocolo:** ${ protocolo }
+  
+  **Início:** ${ inicio_entrevista.strftime('%d/%m/%Y %H:%M') }
+  
+  **Versão:** 5.1.4 (Somente Visualização)
+  
+  ---
+  
+  **Instruções:**
+  
+  1. Preencha todos os módulos da entrevista
+  2. Visualize os dados coletados no final
+  3. Exporte ou imprima conforme necessário
+  
+  ---
+  
+  **Blocos da Entrevista (17 módulos):**
+  
+  * Dados Cadastrais e Endereço
+  * Contato e Localização
+  * Histórico e Entorno
+  * Infraestrutura (Empreendimento, Bombas, Serviços, Monitoramento)
+  * Investigação (Vistoria, MCI, Sondagens)
+  * Anexos
+
+continue button field: boas_vindas_ok
+---
+mandatory: True
+code: |
+  # Fluxo obrigatório da entrevista
+  boas_vindas_ok
+  
+  # ============================================================================
+  # SEÇÃO 1: CADASTRO E LOCALIZAÇÃO
+  # ============================================================================
+  
+  # Dados Cadastrais
+  busca_cnpj_realizada
+  dados_cadastrais_preenchidos
+  
+  # Endereço
+  busca_cep_realizada
+  endereco_preenchido
+  
+  # Contato
+  contato_preenchido
+  
+  # Localização
+  localizacao_preenchida
+  
+  # ============================================================================
+  # SEÇÃO 2: HISTÓRICO E ENTORNO
+  # ============================================================================
+  
+  historico_preenchido
+  entorno_preenchido
+  
+  # ============================================================================
+  # SEÇÃO 3: INFRAESTRUTURA
+  # ============================================================================
+  
+  empreendimento_preenchido
+  bombas_preenchido
+  servicos_preenchido
+  monitoramento_preenchido
+  
+  # ============================================================================
+  # SEÇÃO 4: INVESTIGAÇÃO (NOVOS BLOCOS)
+  # ============================================================================
+  
+  # Ficha de Vistoria (7 sub-blocos)
+  vistoria_responsavel_preenchido
+  sistemas_seguranca_pistas_preenchido
+  sistemas_seguranca_controles_preenchido
+  sistemas_tratamento_preenchido
+  infra_sanitaria_preenchida
+  residuos_preenchido
+  lavagem_preenchida
+  
+  # MCI e Sondagens (precisamos descobrir os nomes das variáveis)
+  # Vamos deixar comentado por enquanto até confirmar
+  # mci_preenchido
+  # sondagens.gathered
+  
+  # ============================================================================
+  # SEÇÃO 5: ANEXOS
+  # ============================================================================
+  
+  anexos_preenchido
+  
+  # ============================================================================
+  # PROCESSAMENTO FINAL
+  # ============================================================================
+  
+  processar_coleta
+  tela_final_exibida
+---
+code: |
+  # Processar e consolidar dados
+  def formatar_dados_objeto(obj):
+      if not obj or not hasattr(obj, '__dict__'):
+          return {}
+      
+      dados_formatados = {}
+      for attr_name in dir(obj):
+          if not attr_name.startswith('_') and not callable(getattr(obj, attr_name)):
+              try:
+                  valor = getattr(obj, attr_name)
+                  if valor is None:
+                      dados_formatados[attr_name] = "Não informado"
+                  elif isinstance(valor, bool):
+                      dados_formatados[attr_name] = "Sim" if valor else "Não"
+                  elif isinstance(valor, (list, DAList)):
+                      if len(valor) > 0:
+                          dados_formatados[attr_name] = ", ".join([str(v) for v in valor])
+                      else:
+                          dados_formatados[attr_name] = "Nenhum"
+                  else:
+                      dados_formatados[attr_name] = str(valor)
+              except:
+                  pass
+      return dados_formatados
+  
+  dados_consolidados = {
+      "metadata": {
+          "protocolo": protocolo,
+          "timestamp": inicio_entrevista.isoformat(),
+          "data_formatada": inicio_entrevista.strftime('%d/%m/%Y %H:%M:%S'),
+          "versao": "5.1.4",
+          "modo": "visualizacao"
+      },
+      "cadastro": {
+          "empresa": formatar_dados_objeto(dados_cadastrais),
+          "endereco": formatar_dados_objeto(endereco),
+          "contato": formatar_dados_objeto(contato),
+          "localizacao": formatar_dados_objeto(localizacao)
+      },
+      "historico": formatar_dados_objeto(historico),
+      "entorno": formatar_dados_objeto(entorno),
+      "infraestrutura": {
+          "empreendimento": formatar_dados_objeto(empreendimento),
+          "bombas": formatar_dados_objeto(bombas),
+          "servicos": formatar_dados_objeto(servicos),
+          "monitoramento": formatar_dados_objeto(monitoramento)
+      },
+      "investigacao": {
+          "vistoria": {
+              "responsavel": formatar_dados_objeto(vistoria),
+              "sistemas_seguranca_pistas": formatar_dados_objeto(sistemas_seguranca_pistas),
+              "sistemas_seguranca_controles": formatar_dados_objeto(sistemas_seguranca_controles),
+              "sistemas_tratamento": formatar_dados_objeto(sistemas_tratamento),
+              "infra_sanitaria": formatar_dados_objeto(infra_sanitaria),
+              "residuos": formatar_dados_objeto(residuos),
+              "lavagem": formatar_dados_objeto(lavagem)
+          },
+          "mci": formatar_dados_objeto(mci) if defined('mci') else {},
+          "sondagens": [
+              formatar_dados_objeto(s) for s in sondagens
+          ] if defined('sondagens') and sondagens.number() > 0 else []
+      },
+      "anexos": {
+          "quantidade": anexos.number() if defined('anexos') else 0
+      }
+  }
+  
+  dados_json = json.dumps(dados_consolidados, ensure_ascii=False, indent=2)
+  
+  processar_coleta = True
+---
+question: |
+  Coleta Finalizada com Sucesso!
+subquestion: |
+  **Protocolo:** ${ protocolo }
+  
+  **Data/Hora:** ${ inicio_entrevista.strftime('%d/%m/%Y %H:%M:%S') }
+  
+  ---
+  
+  **Blocos Preenchidos:**
+  
+  **CADASTRO E LOCALIZAÇÃO:**
+  * Dados Cadastrais
+  * Endereço
+  * Contato
+  * Localização
+  
+  **HISTÓRICO E ENTORNO:**
+  * Histórico
+  * Entorno
+  
+  **INFRAESTRUTURA:**
+  * Empreendimento
+  * Bombas
+  * Serviços
+  * Monitoramento
+  
+  **INVESTIGAÇÃO:**
+  * Ficha de Vistoria (7 seções)
+  * MCI
+  * Sondagens (${ sondagens.number() if defined('sondagens') else 0 })
+  
+  **DOCUMENTAÇÃO:**
+  * Anexos (${ anexos.number() if defined('anexos') else 0 })
+  
+  ---
+  
+  Você pode agora:
+  
+  * Ver o resumo dos dados coletados
+  * Exportar em formato JSON
+  * Encerrar a entrevista
+
+field: tela_final_exibida
+buttons:
+  - Ver Resumo: resumo
+  - Ver JSON: json_view
+  - Encerrar: exit
+---
+event: resumo
+question: |
+  Resumo da Coleta - Passivo Ambiental
+subquestion: |
+  **Protocolo:** ${ protocolo }
+  
+  **Data/Hora:** ${ inicio_entrevista.strftime('%d/%m/%Y %H:%M:%S') }
+  
+  ---
+  
+  ## DADOS CADASTRAIS
+  
+  % if defined('dados_cadastrais'):
+  % if hasattr(dados_cadastrais, 'razao_social') and dados_cadastrais.razao_social:
+  * **Razão Social:** ${ dados_cadastrais.razao_social }
+  % endif
+  % if hasattr(dados_cadastrais, 'cnpj') and dados_cadastrais.cnpj:
+  * **CNPJ:** ${ dados_cadastrais.cnpj }
+  % endif
+  % if hasattr(dados_cadastrais, 'nome_fantasia') and dados_cadastrais.nome_fantasia:
+  * **Nome Fantasia:** ${ dados_cadastrais.nome_fantasia }
+  % endif
+  % endif
+  
+  ---
+  
+  ## ENDEREÇO
+  
+  % if defined('endereco'):
+  % if hasattr(endereco, 'logradouro') and endereco.logradouro:
+  * **Logradouro:** ${ endereco.logradouro }
+  % endif
+  % if hasattr(endereco, 'numero') and endereco.numero:
+  * **Número:** ${ endereco.numero }
+  % endif
+  % if hasattr(endereco, 'municipio') and endereco.municipio:
+  * **Município:** ${ endereco.municipio }
+  % endif
+  % if hasattr(endereco, 'uf') and endereco.uf:
+  * **UF:** ${ endereco.uf }
+  % endif
+  % endif
+  
+  ---
+  
+  ## INFRAESTRUTURA
+  
+  % if defined('bombas') and hasattr(bombas, 'quantidade'):
+  * **Bombas:** ${ bombas.quantidade }
+  % endif
+  
+  ---
+  
+  ## INVESTIGAÇÃO
+  
+  % if defined('sondagens'):
+  * **Sondagens Realizadas:** ${ sondagens.number() }
+  % endif
+  
+  ---
+  
+  ## DOCUMENTAÇÃO
+  
+  % if defined('anexos'):
+  * **Anexos:** ${ anexos.number() } arquivo(s)
+  % endif
+
+buttons:
+  - Ver JSON Completo: json_view
+  - Encerrar: exit
+---
+event: json_view
+question: |
+  Dados em Formato JSON
+subquestion: |
+  **Exportação de Dados - Formato JSON**
+  
+  Copie o conteúdo abaixo:
+  
+  ${ code_block(dados_json if defined('dados_json') else '{}') }
+
+buttons:
+  - Voltar ao Resumo: resumo
+  - Encerrar: exit
+---

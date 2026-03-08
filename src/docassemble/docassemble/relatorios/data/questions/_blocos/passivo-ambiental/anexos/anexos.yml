@@ -1,0 +1,261 @@
+---
+# =============================================================================
+# BLOCO: Upload de Documentos e Anexos
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Upload de documentos técnicos, ARTs, laudos, fotos
+# =============================================================================
+
+---
+objects:
+  - anexos: DAObject
+  - documentos_pdf: DAFileList.using(auto_gather=False)
+  - fotos: DAFileList.using(auto_gather=False)
+  - planilhas: DAFileList.using(auto_gather=False)
+  - kmz_area: DAFileList.using(auto_gather=False, maximum_number=1)
+---
+question: |
+  📎 Documentos e Anexos
+subquestion: |
+  Faça upload dos documentos técnicos relacionados ao empreendimento.
+  
+  > 💡 **Dica:** Organize os arquivos antes do upload para facilitar.
+
+section: anexos
+fields:
+  - note: |
+      **�� Documentos Técnicos (PDF)**
+      
+      ARTs, laudos, certificados, licenças, etc.
+  
+  - "Upload de PDFs": documentos_pdf
+    datatype: files
+    required: False
+    accept: |
+      "application/pdf"
+    help: |
+      Aceita múltiplos arquivos PDF
+  
+  - note: |
+      ---
+      **📸 Fotografias**
+      
+      Mosaicos, fotos de instalações, sondagens, etc.
+  
+  - "Upload de fotos": fotos
+    datatype: files
+    required: False
+    accept: |
+      "image/jpeg,image/jpg,image/png"
+    help: |
+      Formatos aceitos: JPG, PNG
+  
+  - note: |
+      ---
+      **📊 Planilhas e Dados**
+      
+      Resultados analíticos, planilhas de sondagens, etc.
+  
+  - "Upload de planilhas": planilhas
+    datatype: files
+    required: False
+    accept: |
+      "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+    help: |
+      Formatos aceitos: XLS, XLSX, CSV
+  
+  - note: |
+      ---
+      **🗺️ Base Cartográfica (KMZ)**
+      
+      Arquivo KMZ da área do empreendimento
+  
+  - "Upload de KMZ": kmz_area
+    datatype: files
+    required: False
+    accept: |
+      "application/vnd.google-earth.kmz"
+    help: |
+      Arquivo único KMZ para visualização no Google Maps
+  
+  - note: |
+      ---
+      **📝 Documentos Específicos**
+  
+  - "Possui ART de responsabilidade técnica?": anexos.tem_art
+    datatype: yesnoradio
+    default: False
+  
+  - "Possui cadeia de custódia das amostras?": anexos.tem_cadeia_custodia
+    datatype: yesnoradio
+    default: False
+  
+  - "Possui certificado do laboratório (INMETRO)?": anexos.tem_certificado_lab
+    datatype: yesnoradio
+    default: False
+  
+  - "Possui relatório de serviços realizados?": anexos.tem_relatorio_servicos
+    datatype: yesnoradio
+    default: False
+
+continue button field: anexos_preenchido
+---
+# =============================================================================
+# CÓDIGO: Processamento de anexos
+# =============================================================================
+code: |
+  # Contagem de arquivos
+  total_pdfs = len(documentos_pdf) if documentos_pdf.gathered else 0
+  total_fotos = len(fotos) if fotos.gathered else 0
+  total_planilhas = len(planilhas) if planilhas.gathered else 0
+  tem_kmz = len(kmz_area) > 0 if kmz_area.gathered else False
+  
+  # Lista de documentos obrigatórios faltantes
+  docs_faltantes = []
+  
+  if not anexos.tem_art:
+    docs_faltantes.append({
+      "nome": "ART - Anotação de Responsabilidade Técnica",
+      "importancia": "Obrigatório conforme Lei 6.496/77"
+    })
+  
+  if realizou_sondagens and not anexos.tem_cadeia_custodia:
+    docs_faltantes.append({
+      "nome": "Cadeia de Custódia de Amostras",
+      "importancia": "Essencial para validade das análises"
+    })
+  
+  if realizou_sondagens and not anexos.tem_certificado_lab:
+    docs_faltantes.append({
+      "nome": "Certificado de Acreditação do Laboratório",
+      "importancia": "INMETRO/RBC - Garantia de qualidade analítica"
+    })
+  
+  # Preparar payload dos anexos
+  anexos_payload = {
+    "documentos": {
+      "pdfs": [{"filename": doc.filename, "size_bytes": doc.size_in_bytes()} for doc in documentos_pdf] if total_pdfs > 0 else [],
+      "total_pdfs": total_pdfs
+    },
+    "fotos": {
+      "arquivos": [{"filename": foto.filename, "size_bytes": foto.size_in_bytes()} for foto in fotos] if total_fotos > 0 else [],
+      "total_fotos": total_fotos
+    },
+    "planilhas": {
+      "arquivos": [{"filename": p.filename, "size_bytes": p.size_in_bytes()} for p in planilhas] if total_planilhas > 0 else [],
+      "total_planilhas": total_planilhas
+    },
+    "kmz": {
+      "arquivo": kmz_area[0].filename if tem_kmz else None,
+      "size_bytes": kmz_area[0].size_in_bytes() if tem_kmz else None
+    },
+    "documentos_tecnicos": {
+      "art": anexos.tem_art,
+      "cadeia_custodia": anexos.tem_cadeia_custodia,
+      "certificado_laboratorio": anexos.tem_certificado_lab,
+      "relatorio_servicos": anexos.tem_relatorio_servicos
+    }
+  }
+  
+  # Score de documentação (0-100)
+  score_documentacao = 0
+  
+  if total_pdfs > 0:
+    score_documentacao += 20
+  if total_fotos > 0:
+    score_documentacao += 15
+  if tem_kmz:
+    score_documentacao += 15
+  if anexos.tem_art:
+    score_documentacao += 25
+  if anexos.tem_cadeia_custodia:
+    score_documentacao += 10
+  if anexos.tem_certificado_lab:
+    score_documentacao += 10
+  if anexos.tem_relatorio_servicos:
+    score_documentacao += 5
+  
+  # Classificação
+  if score_documentacao >= 80:
+    classificacao_docs = "Completa"
+  elif score_documentacao >= 50:
+    classificacao_docs = "Adequada"
+  elif score_documentacao >= 30:
+    classificacao_docs = "Parcial"
+  else:
+    classificacao_docs = "Incompleta"
+---
+# =============================================================================
+# RESUMO: Template para exibição
+# =============================================================================
+template: resumo_anexos
+content: |
+  ### 📎 Documentação Anexa
+  
+  **Classificação:** ${ classificacao_docs } (${ score_documentacao }/100)
+  
+  ---
+  
+  **Arquivos Enviados:**
+  
+  % if total_pdfs > 0:
+  📄 **PDFs:** ${ total_pdfs } arquivo(s)
+  % for doc in documentos_pdf:
+  - ${ doc.filename } (${ "{:.1f}".format(doc.size_in_bytes() / 1024) } KB)
+  % endfor
+  % else:
+  📄 **PDFs:** Nenhum
+  % endif
+  
+  ---
+  
+  % if total_fotos > 0:
+  📸 **Fotos:** ${ total_fotos } arquivo(s)
+  % for foto in fotos:
+  - ${ foto.filename } (${ "{:.1f}".format(foto.size_in_bytes() / 1024) } KB)
+  % endfor
+  % else:
+  📸 **Fotos:** Nenhuma
+  % endif
+  
+  ---
+  
+  % if total_planilhas > 0:
+  📊 **Planilhas:** ${ total_planilhas } arquivo(s)
+  % for planilha in planilhas:
+  - ${ planilha.filename } (${ "{:.1f}".format(planilha.size_in_bytes() / 1024) } KB)
+  % endfor
+  % else:
+  📊 **Planilhas:** Nenhuma
+  % endif
+  
+  ---
+  
+  % if tem_kmz:
+  🗺️ **KMZ:** ✅ ${ kmz_area[0].filename }
+  % else:
+  🗺️ **KMZ:** ❌ Não fornecido
+  % endif
+  
+  ---
+  
+  **Documentos Técnicos:**
+  
+  ${ "✅" if anexos.tem_art else "❌" } ART  
+  ${ "✅" if anexos.tem_cadeia_custodia else "❌" } Cadeia de Custódia  
+  ${ "✅" if anexos.tem_certificado_lab else "❌" } Certificado INMETRO  
+  ${ "✅" if anexos.tem_relatorio_servicos else "❌" } Relatório de Serviços
+  
+  % if len(docs_faltantes) > 0:
+  
+  ---
+  
+  ⚠️ **Documentos Faltantes (${ len(docs_faltantes) }):**
+  
+  % for doc in docs_faltantes:
+  **${ doc['nome'] }**  
+  _${ doc['importancia'] }_
+  
+  % endfor
+  % endif

@@ -1,0 +1,129 @@
+# src/docassemble/interviews/_blocos/bloco-dados-cadastrais.yml
+---
+# =============================================================================
+# 🧱 BLOCO REUTILIZÁVEL: DADOS CADASTRAIS
+# =============================================================================
+# Coleta CNPJ, Razão Social, Nome Fantasia, Inscrições
+# Usado em: Passivo, PGRS, NR13, Licenciamento, etc.
+# =============================================================================
+
+---
+# Busca de CNPJ (opcional - não bloqueia)
+id: busca_cnpj
+question: |
+  🔍 Busca Automática por CNPJ
+subquestion: |
+  Digite o CNPJ para buscar automaticamente os dados cadastrais.
+  
+  <div class="alert alert-info">
+    💡 A busca é opcional. Você pode preencher manualmente se preferir.
+  </div>
+fields:
+  - "Deseja buscar por CNPJ?": buscar_cnpj
+    datatype: yesnoradio
+    default: True
+    
+  - "CNPJ": dados_cadastrais.cnpj_input
+    show if: buscar_cnpj
+    required: False
+    hint: "Digite apenas números ou XX.XXX.XXX/XXXX-XX"
+
+validation code: |
+  if buscar_cnpj and dados_cadastrais.cnpj_input:
+    # Limpa CNPJ
+    cnpj_limpo = limpar_cnpj(dados_cadastrais.cnpj_input)
+    dados_cadastrais.cnpj = cnpj_limpo
+    
+    # Tenta buscar (não bloqueia se falhar)
+    try:
+      import requests
+      response = requests.get(
+        f"https://www.receitaws.com.br/v1/cnpj/{cnpj_limpo}",
+        timeout=5
+      )
+      if response.status_code == 200:
+        dados = response.json()
+        if dados.get('status') != 'ERROR':
+          # Preenche campos
+          dados_cadastrais.razao_social = dados.get('nome', '')
+          dados_cadastrais.nome_fantasia = dados.get('fantasia', '')
+          dados_cadastrais.cnpj_busca_sucesso = True
+          
+          # Preenche endereço também
+          if defined('endereco'):
+            endereco.logradouro = dados.get('logradouro', '')
+            endereco.numero = dados.get('numero', '')
+            endereco.bairro = dados.get('bairro', '')
+            endereco.municipio = dados.get('municipio', '')
+            endereco.uf = dados.get('uf', '')
+            endereco.cep = limpar_cep(dados.get('cep', ''))
+        else:
+          dados_cadastrais.cnpj_busca_sucesso = False
+    except:
+      dados_cadastrais.cnpj_busca_sucesso = False
+  else:
+    dados_cadastrais.cnpj_busca_sucesso = False
+
+continue button field: busca_cnpj_realizada
+---
+# Dados cadastrais principais
+id: dados_cadastrais
+question: |
+  % if defined('dados_cadastrais.cnpj_busca_sucesso') and dados_cadastrais.cnpj_busca_sucesso:
+  ✅ Dados encontrados! Confira e ajuste se necessário
+  % else:
+  🏢 Dados Cadastrais da Empresa
+  % endif
+subquestion: |
+  % if defined('dados_cadastrais.cnpj_busca_sucesso') and dados_cadastrais.cnpj_busca_sucesso:
+  <div class="alert alert-success">
+    Os dados abaixo foram preenchidos automaticamente pela busca no CNPJ.
+    Verifique e corrija se necessário.
+  </div>
+  % elif defined('buscar_cnpj') and buscar_cnpj and defined('dados_cadastrais.cnpj_busca_sucesso') and not dados_cadastrais.cnpj_busca_sucesso:
+  <div class="alert alert-warning">
+    ⚠️ Não foi possível buscar os dados automaticamente. Preencha manualmente.
+  </div>
+  % endif
+  
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - "CNPJ": dados_cadastrais.cnpj
+    required: False
+    default: ${ dados_cadastrais.cnpj if defined('dados_cadastrais.cnpj') else '' }
+    hint: "14 dígitos sem formatação"
+    
+  - "Razão Social": dados_cadastrais.razao_social
+    required: False
+    default: ${ dados_cadastrais.razao_social if defined('dados_cadastrais.razao_social') else '' }
+    
+  - "Nome Fantasia": dados_cadastrais.nome_fantasia
+    required: False
+    default: ${ dados_cadastrais.nome_fantasia if defined('dados_cadastrais.nome_fantasia') else '' }
+    
+  - "Inscrição Estadual": dados_cadastrais.inscricao_estadual
+    required: False
+    
+  - "Inscrição Municipal": dados_cadastrais.inscricao_municipal
+    required: False
+
+under: |
+  [🔍 Buscar outro CNPJ](${ url_action('busca_cnpj') })
+
+continue button field: dados_cadastrais_preenchidos
+---
+# Código para extrair dados do bloco
+code: |
+  def extrair_dados_cadastrais():
+    """Extrai dados cadastrais para envio à API"""
+    return {
+      'cnpj': limpar_cnpj(dados_cadastrais.cnpj) if defined('dados_cadastrais.cnpj') else None,
+      'razao_social': dados_cadastrais.razao_social if defined('dados_cadastrais.razao_social') else None,
+      'nome_fantasia': dados_cadastrais.nome_fantasia if defined('dados_cadastrais.nome_fantasia') else None,
+      'inscricao_estadual': dados_cadastrais.inscricao_estadual if defined('dados_cadastrais.inscricao_estadual') else None,
+      'inscricao_municipal': dados_cadastrais.inscricao_municipal if defined('dados_cadastrais.inscricao_municipal') else None,
+      'cnpj_origem_busca': dados_cadastrais.cnpj_busca_sucesso if defined('dados_cadastrais.cnpj_busca_sucesso') else False
+    }

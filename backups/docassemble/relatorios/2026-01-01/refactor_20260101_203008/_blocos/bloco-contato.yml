@@ -1,0 +1,71 @@
+#  src/docassemble/interviews/_blocos/bloco-contato.yml
+---
+# =============================================================================
+# 🧱 BLOCO REUTILIZÁVEL: CONTATO
+# =============================================================================
+# Coleta e-mail, telefone, celular, responsável
+# Usado em: Todas as entrevistas
+# =============================================================================
+
+id: contato
+question: |
+  📞 Dados de Contato
+subquestion: |
+  Informe os dados de contato para comunicação sobre o projeto.
+  
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - "E-mail": contato.email
+    datatype: email
+    required: False
+    hint: "contato@empresa.com"
+    
+  - "Telefone": contato.telefone_input
+    required: False
+    hint: "(XX) XXXX-XXXX ou (XX) XXXXX-XXXX"
+    
+  - "Celular": contato.celular_input
+    required: False
+    hint: "(XX) XXXXX-XXXX"
+    
+  - note: |
+      ---
+      #### 👤 Responsável pelas Informações
+    
+  - "Nome do Responsável": contato.responsavel_nome
+    required: False
+    
+  - "Cargo/Função": contato.responsavel_cargo
+    required: False
+    hint: "Ex: Gerente, Proprietário, Engenheiro"
+    
+  - "CPF do Responsável": contato.responsavel_cpf
+    required: False
+    hint: "Apenas para NR13 e documentos técnicos"
+
+validation code: |
+  # Formata telefones (não bloqueia se inválido)
+  if defined('contato.telefone_input') and contato.telefone_input:
+    tel_limpo = limpar_telefone(contato.telefone_input)
+    contato.telefone = tel_limpo if len(tel_limpo) in [10, 11] else contato.telefone_input
+  
+  if defined('contato.celular_input') and contato.celular_input:
+    cel_limpo = limpar_telefone(contato.celular_input)
+    contato.celular = cel_limpo if len(cel_limpo) in [10, 11] else contato.celular_input
+
+continue button field: contato_preenchido
+---
+code: |
+  def extrair_contato():
+    """Extrai dados de contato para envio à API"""
+    return {
+      'email': contato.email if defined('contato.email') else None,
+      'telefone': contato.telefone if defined('contato.telefone') else None,
+      'celular': contato.celular if defined('contato.celular') else None,
+      'responsavel_nome': contato.responsavel_nome if defined('contato.responsavel_nome') else None,
+      'responsavel_cargo': contato.responsavel_cargo if defined('contato.responsavel_cargo') else None,
+      'responsavel_cpf': limpar_cnpj(contato.responsavel_cpf) if defined('contato.responsavel_cpf') else None
+    }

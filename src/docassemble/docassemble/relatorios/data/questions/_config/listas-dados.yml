@@ -1,0 +1,178 @@
+---
+# =============================================================================
+# LISTAS DE DADOS: Opções para campos de seleção
+# Incluído por: passivo-ambiental.yml (e demais entrevistas)
+# =============================================================================
+---
+code: |
+
+  lista_ufs = [
+      'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
+      'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
+      'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ]
+
+  lista_tipos_empreendimento = [
+      'Posto Revendedor de Combustíveis (PRC)',
+      'Posto de Abastecimento (PA)',
+      'Posto Flutuante (PF)',
+      'Posto Aviário (PAv)',
+      'Transportador Revendedor Retalhista (TRR)',
+      'Base de Distribuição',
+      'Outro',
+  ]
+
+  lista_tipos_tanque = [
+      'Subterrâneo simples parede (aço carbono)',
+      'Subterrâneo dupla parede (fibra de vidro)',
+      'Subterrâneo dupla parede (aço/fibra)',
+      'Superfície simples parede',
+      'Superfície dupla parede',
+      'Outro',
+  ]
+
+  lista_tanques = [
+      'TQ-01', 'TQ-02', 'TQ-03', 'TQ-04', 'TQ-05',
+      'TQ-06', 'TQ-07', 'TQ-08', 'TQ-09', 'TQ-10',
+      'Outro',
+  ]
+
+  lista_produtos = [
+      'Gasolina C',
+      'Gasolina Aditivada',
+      'Etanol Hidratado (AEHC)',
+      'Diesel S10',
+      'Diesel S500',
+      'Diesel Aditivado',
+      'GNV (Gás Natural Veicular)',
+      'Arla 32',
+      'Óleo Lubrificante',
+      'Querosene',
+      'Outro',
+  ]
+
+  lista_combustiveis = [
+      'Gasolina C',
+      'Gasolina Aditivada',
+      'Etanol Hidratado (AEHC)',
+      'Diesel S10',
+      'Diesel S500',
+      'Diesel Aditivado',
+      'GNV (Gás Natural Veicular)',
+      'Arla 32',
+      'Querosene',
+      'Outro',
+  ]
+
+  lista_bandeiras = [
+      'Ipiranga',
+      'Shell',
+      'Petrobras / BR',
+      'Vibra Energia',
+      'Ale',
+      'Sabbá',
+      'Bandeira Branca',
+      'Outro',
+  ]
+
+  lista_situacao_tanque = [
+      'Em operação',
+      'Desativado (vazio)',
+      'Desativado (abandonado)',
+      'Retirado',
+      'Interditado',
+  ]
+
+  lista_sistemas_monitoramento = [
+      'Detector de vazamento intersticial',
+      'Medidor de nível eletrônico (sonda)',
+      'Tubo de monitoramento (poço de observação)',
+      'Sensor de vapores no interstício',
+      'Não possui',
+      'Outro',
+  ]
+
+  lista_sistemas_tratamento = [
+      'Caixa separadora de água e óleo (SAO)',
+      'Caixa separadora com filtro',
+      'ETE compacta',
+      'Fossa séptica + sumidouro',
+      'Rede coletora municipal',
+      'Não possui',
+      'Outro',
+  ]
+
+  lista_condicao_geral = [
+      'Ótima',
+      'Boa',
+      'Regular',
+      'Ruim',
+      'Péssima',
+      'Não avaliado',
+  ]
+
+  lista_sim_nao_na = [
+      'Sim',
+      'Não',
+      'Não aplicável',
+      'Não verificado',
+  ]
+
+  lista_uso_solo = [
+      'Residencial',
+      'Comercial',
+      'Industrial',
+      'Institucional (escola, hospital, etc.)',
+      'Área verde / parque',
+      'Área de preservação permanente (APP)',
+      'Terreno vago',
+      'Misto',
+      'Outro',
+  ]
+
+  lista_profundidade_nivel_dagua = [
+      'Não detectado',
+      '< 1 m',
+      '1 a 2 m',
+      '2 a 5 m',
+      '5 a 10 m',
+      '> 10 m',
+  ]
+
+  lista_tipos_sondagem = [
+      'Poço de Monitoramento (PM)',
+      'Poço de Abatimento (PAb)',
+      'Sondagem a Trado (ST)',
+      'Sondagem a Percussão (SP)',
+      'Outro',
+  ]
+
+  lista_fases_investigacao = [
+      'Avaliação Preliminar (AP)',
+      'Investigação Confirmatória (IC)',
+      'Investigação Detalhada (ID)',
+      'Avaliação de Risco (AR)',
+      'Remediação',
+      'Monitoramento de Encerramento',
+      'Encerrado',
+      'Não iniciado',
+  ]
+
+  lista_tipos_bomba = [
+      'Abastecedora simples (1 mangueira)',
+      'Abastecedora dupla (2 mangueiras)',
+      'Abastecedora múltipla (3+ mangueiras)',
+      'Bomba submersível',
+      'Bomba de vácuo',
+      'Outro',
+  ]
+
+  lista_marcas_equipamento = [
+      'Gilbarco',
+      'Wayne',
+      'Tokheim',
+      'Dresser',
+      'Petrotec',
+      'Outra',
+  ]
+---

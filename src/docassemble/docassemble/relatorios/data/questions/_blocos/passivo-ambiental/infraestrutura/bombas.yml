@@ -1,0 +1,167 @@
+---
+# =============================================================================
+# 🧱 BLOCO: BOMBAS E LINHAS DE ABASTECIMENTO
+# =============================================================================
+# Informações sobre bombas, bicos e tubulações
+# Usado em: Passivo Ambiental
+# =============================================================================
+
+id: bombas
+question: |
+  ⛽ Sistema de Abastecimento
+subquestion: |
+  Informe os detalhes sobre bombas e linhas de abastecimento.
+
+fields:
+  - note: |
+      #### 🏝️ Ilhas de Abastecimento
+      
+  - "Quantidade de ilhas (pistas) de abastecimento": bombas.qtd_ilhas
+    datatype: integer
+    required: False
+    min: 0
+    max: 10
+    default: 1
+    
+  - note: |
+      ---
+      #### ⛽ Bombas de Abastecimento
+      
+  - "Quantidade total de bombas": bombas.qtd_bombas
+    datatype: integer
+    required: False
+    min: 0
+    max: 20
+    default: 2
+    
+  - "Quantidade de bicos de abastecimento": bombas.qtd_bicos
+    datatype: integer
+    required: False
+    min: 0
+    max: 50
+    default: 4
+    hint: "Total de bicos em todas as bombas"
+    
+  - note: |
+      ---
+      #### 🔧 Tubulações e Conexões
+      
+  - "Material das tubulações": bombas.tubulacao_material
+    required: False
+    input type: radio
+    choices:
+      - "PEAD (Polietileno de Alta Densidade)": pead
+      - "Aço carbono": aco
+      - "Fibra de vidro": fibra
+      - "Misto": misto
+      - "Outro": outro
+      
+  - "As tubulações são enterradas?": bombas.tubulacao_enterrada
+    datatype: yesnoradio
+    required: False
+    
+  - "Profundidade média das tubulações (m)": bombas.tubulacao_profundidade
+    datatype: number
+    required: False
+    show if: bombas.tubulacao_enterrada
+    min: 0
+    hint: "Profundidade em metros"
+    
+  - "Possui sistema de contenção secundária nas linhas?": bombas.tem_contencao_linhas
+    datatype: yesnoradio
+    required: False
+    
+  - note: |
+      ---
+      #### ✔️ Sistemas de Detecção
+      
+  - "Possui sistema de detecção de vazamento nas linhas?": bombas.tem_deteccao_vazamento
+    datatype: yesnoradio
+    required: False
+    
+  - "Tipo de sistema de detecção": bombas.deteccao_tipo
+    required: False
+    show if: bombas.tem_deteccao_vazamento
+    input type: radio
+    choices:
+      - "Pressostático": pressostatico
+      - "Eletrônico": eletronico
+      - "Visual": visual
+      - "Outro": outro
+      
+  - "Possui câmaras de contenção nas unidades abastecedoras?": bombas.tem_cameras_contencao
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui câmaras de contenção nas unidades de filtragem?": bombas.tem_cameras_filtragem
+    datatype: yesnoradio
+    required: False
+    
+  - note: |
+      ---
+      #### 🔍 Estado de Conservação
+      
+  - "Estado de conservação das bombas": bombas.estado_bombas
+    required: False
+    input type: radio
+    choices:
+      - "Bom (sem vazamentos aparentes)": bom
+      - "Regular (pequenos vazamentos)": regular
+      - "Ruim (vazamentos significativos)": ruim
+      
+  - "Observações sobre vazamentos ou manchas": bombas.observacoes_vazamentos
+    datatype: area
+    required: False
+    rows: 3
+    hint: "Descreva eventuais vazamentos, manchas de óleo ou problemas observados"
+    
+  - note: |
+      ---
+      #### 🛠️ Manutenção
+      
+  - "Frequência de manutenção das bombas": bombas.manutencao_frequencia
+    required: False
+    input type: radio
+    choices:
+      - Mensal
+      - Bimestral
+      - Trimestral
+      - Semestral
+      - Anual
+      - "Quando necessário": necessario
+      - Irregular
+      
+  - "Há registro de vazamentos anteriores nas bombas/linhas?": bombas.historico_vazamentos
+    datatype: yesnoradio
+    required: False
+    
+  - "Descrição de vazamentos anteriores": bombas.descricao_vazamentos
+    datatype: area
+    required: False
+    show if: bombas.historico_vazamentos
+    rows: 3
+
+section: infraestrutura
+continue button field: bombas_preenchido
+---
+code: |
+  def extrair_bombas():
+    """Extrai dados de bombas e linhas para API"""
+    return {
+      'qtd_ilhas': bombas.qtd_ilhas if defined('bombas.qtd_ilhas') else None,
+      'qtd_bombas': bombas.qtd_bombas if defined('bombas.qtd_bombas') else None,
+      'qtd_bicos': bombas.qtd_bicos if defined('bombas.qtd_bicos') else None,
+      'tubulacao_material': bombas.tubulacao_material if defined('bombas.tubulacao_material') else None,
+      'tubulacao_enterrada': bombas.tubulacao_enterrada if defined('bombas.tubulacao_enterrada') else None,
+      'tubulacao_profundidade': bombas.tubulacao_profundidade if defined('bombas.tubulacao_profundidade') else None,
+      'tem_contencao_linhas': bombas.tem_contencao_linhas if defined('bombas.tem_contencao_linhas') else None,
+      'tem_deteccao_vazamento': bombas.tem_deteccao_vazamento if defined('bombas.tem_deteccao_vazamento') else None,
+      'deteccao_tipo': bombas.deteccao_tipo if defined('bombas.deteccao_tipo') else None,
+      'tem_cameras_contencao': bombas.tem_cameras_contencao if defined('bombas.tem_cameras_contencao') else None,
+      'tem_cameras_filtragem': bombas.tem_cameras_filtragem if defined('bombas.tem_cameras_filtragem') else None,
+      'estado_bombas': bombas.estado_bombas if defined('bombas.estado_bombas') else None,
+      'observacoes_vazamentos': bombas.observacoes_vazamentos if defined('bombas.observacoes_vazamentos') else None,
+      'manutencao_frequencia': bombas.manutencao_frequencia if defined('bombas.manutencao_frequencia') else None,
+      'historico_vazamentos': bombas.historico_vazamentos if defined('bombas.historico_vazamentos') else None,
+      'descricao_vazamentos': bombas.descricao_vazamentos if defined('bombas.descricao_vazamentos') else None
+    }

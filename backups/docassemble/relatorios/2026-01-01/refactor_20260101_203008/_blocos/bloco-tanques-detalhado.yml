@@ -1,0 +1,305 @@
+---
+# =============================================================================
+# 🧱 BLOCO: TANQUES DE COMBUSTÍVEL (DETALHADO)
+# =============================================================================
+# Informações completas sobre os tanques do sistema
+# Usado em: Passivo Ambiental, NR13
+# =============================================================================
+
+id: tanques_detalhado
+question: |
+  🛢️ Sistema de Armazenamento de Combustíveis
+subquestion: |
+  Informe os detalhes sobre os tanques de combustível.
+
+fields:
+  - "Quantidade total de tanques": tanques.quantidade
+    datatype: integer
+    required: False
+    min: 0
+    max: 20
+    default: 1
+
+section: infraestrutura
+continue button field: tanques_quantidade_informada
+---
+# Lista de tanques (DAList)
+objects:
+  - tanques: DAList.using(object_type=DAObject, there_are_any=True)
+---
+# Pergunta para cada tanque individual
+question: |
+  Tanque ${ tanques.number() + 1 }
+subquestion: |
+  Informe os detalhes do tanque ${ tanques.number() + 1 }.
+
+fields:
+  - note: |
+      #### 📋 Identificação
+      
+  - "Número/Identificação do tanque": tanques[i].numero
+    required: False
+    hint: "Ex: TQ-01, Tanque 1"
+    
+  - "Tipo de tanque": tanques[i].tipo
+    required: False
+    input type: dropdown
+    code: lista_tipos_tanque
+    
+  - "É um tanque tripartido?": tanques[i].eh_tripartido
+    datatype: yesnoradio
+    required: False
+    help: |
+      Tanque tripartido possui 3 compartimentos em um único tanque
+      
+  - note: |
+      ---
+      #### ⛽ Combustíveis
+      
+  - "Combustível armazenado": tanques[i].combustivel
+    required: False
+    code: lista_combustiveis
+    show if:
+      variable: tanques[i].eh_tripartido
+      is: False
+      
+  - note: |
+      **Compartimentos do tanque tripartido:**
+    show if: tanques[i].eh_tripartido
+    
+  - "Combustível - Compartimento 1": tanques[i].comb_comp1
+    required: False
+    code: lista_combustiveis
+    show if: tanques[i].eh_tripartido
+    
+  - "Volume Comp. 1 (m³)": tanques[i].vol_comp1
+    datatype: number
+    required: False
+    show if: tanques[i].eh_tripartido
+    min: 0
+    
+  - "Combustível - Compartimento 2": tanques[i].comb_comp2
+    required: False
+    code: lista_combustiveis
+    show if: tanques[i].eh_tripartido
+    
+  - "Volume Comp. 2 (m³)": tanques[i].vol_comp2
+    datatype: number
+    required: False
+    show if: tanques[i].eh_tripartido
+    min: 0
+    
+  - "Combustível - Compartimento 3": tanques[i].comb_comp3
+    required: False
+    code: lista_combustiveis
+    show if: tanques[i].eh_tripartido
+    
+  - "Volume Comp. 3 (m³)": tanques[i].vol_comp3
+    datatype: number
+    required: False
+    show if: tanques[i].eh_tripartido
+    min: 0
+    
+  - note: |
+      ---
+      #### 📏 Capacidade e Dimensões
+      
+  - "Capacidade total (m³)": tanques[i].capacidade
+    datatype: number
+    required: False
+    min: 0
+    show if:
+      variable: tanques[i].eh_tripartido
+      is: False
+    hint: "Volume em metros cúbicos"
+    
+  - "Capacidade total (m³)": tanques[i].capacidade_total
+    datatype: number
+    required: False
+    min: 0
+    show if: tanques[i].eh_tripartido
+    default: |
+      ${ (tanques[i].vol_comp1 if defined('tanques[i].vol_comp1') else 0) + 
+         (tanques[i].vol_comp2 if defined('tanques[i].vol_comp2') else 0) + 
+         (tanques[i].vol_comp3 if defined('tanques[i].vol_comp3') else 0) }
+    
+  - note: |
+      ---
+      #### 🏗️ Construção e Material
+      
+  - "Material do tanque": tanques[i].material
+    required: False
+    input type: radio
+    choices:
+      - "Aço carbono": aco_carbono
+      - "Fibra de vidro (PRFV)": fibra
+      - "Aço com revestimento interno": aco_revestido
+      - "Outro": outro
+      
+  - "Possui parede dupla?": tanques[i].parede_dupla
+    datatype: yesnoradio
+    required: False
+    
+  - "É jaquetado?": tanques[i].jaquetado
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui monitoramento intersticial?": tanques[i].monit_intersticial
+    datatype: yesnoradio
+    required: False
+    
+  - "Tipo de monitoramento": tanques[i].monit_tipo
+    required: False
+    show if: tanques[i].monit_intersticial
+    input type: radio
+    choices:
+      - "Eletrônico": eletronico
+      - "Manual": manual
+      - "Sensor de nível": sensor
+      
+  - note: |
+      ---
+      #### 📅 Instalação
+      
+  - "Ano de fabricação": tanques[i].ano_fabricacao
+    datatype: integer
+    required: False
+    min: 1950
+    max: 2025
+    
+  - "Ano de instalação": tanques[i].ano_instalacao
+    datatype: integer
+    required: False
+    min: 1950
+    max: 2025
+    
+  - note: |
+      ---
+      #### 📍 Localização
+      
+  - "Localização do tanque": tanques[i].localizacao
+    required: False
+    input type: radio
+    choices:
+      - "Sob a pista de abastecimento": pista
+      - "Área externa (lateral)": externa
+      - "Sob área de troca de óleo": troca_oleo
+      - "Outra": outra
+      
+  - "Especificar localização": tanques[i].localizacao_especificar
+    required: False
+    show if:
+      variable: tanques[i].localizacao
+      is: outra
+      
+  - note: |
+      ---
+      #### ✅ Situação Atual
+      
+  - "Situação do tanque": tanques[i].situacao
+    required: False
+    input type: radio
+    choices:
+      - "Ativo": ativo
+      - "Desativado": desativado
+      - "Removido": removido
+      - "Abandonado": abandonado
+      
+  - "Data de desativação": tanques[i].data_desativacao
+    datatype: date
+    required: False
+    show if:
+      variable: tanques[i].situacao
+      is: desativado
+      
+  - note: |
+      ---
+      #### 🔧 Equipamentos de Proteção
+      
+  - "Possui bocas de descarga com cruzeta (NBR 15.138)?": tanques[i].tem_cruzeta
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui câmara de contenção (Spill/Sumps NBR 15.118)?": tanques[i].tem_spill
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui sistema de respiro (suspiros)?": tanques[i].tem_respiro
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui válvula antitransbordamento?": tanques[i].tem_antitransbordamento
+    datatype: yesnoradio
+    required: False
+
+list collect: True
+---
+# Código para extrair dados dos tanques
+code: |
+  def extrair_tanques():
+    """Extrai dados dos tanques para API"""
+    if not defined('tanques'):
+      return []
+      
+    lista_tanques = []
+    for tanque in tanques:
+      dados_tanque = {
+        'numero': tanque.numero if defined('tanque.numero') else None,
+        'tipo': tanque.tipo if defined('tanque.tipo') else None,
+        'eh_tripartido': tanque.eh_tripartido if defined('tanque.eh_tripartido') else False,
+        'combustivel': tanque.combustivel if defined('tanque.combustivel') else None,
+        'capacidade': tanque.capacidade if defined('tanque.capacidade') else None,
+        'material': tanque.material if defined('tanque.material') else None,
+        'parede_dupla': tanque.parede_dupla if defined('tanque.parede_dupla') else None,
+        'jaquetado': tanque.jaquetado if defined('tanque.jaquetado') else None,
+        'monit_intersticial': tanque.monit_intersticial if defined('tanque.monit_intersticial') else None,
+        'monit_tipo': tanque.monit_tipo if defined('tanque.monit_tipo') else None,
+        'ano_fabricacao': tanque.ano_fabricacao if defined('tanque.ano_fabricacao') else None,
+        'ano_instalacao': tanque.ano_instalacao if defined('tanque.ano_instalacao') else None,
+        'localizacao': tanque.localizacao if defined('tanque.localizacao') else None,
+        'situacao': tanque.situacao if defined('tanque.situacao') else None,
+        'tem_cruzeta': tanque.tem_cruzeta if defined('tanque.tem_cruzeta') else None,
+        'tem_spill': tanque.tem_spill if defined('tanque.tem_spill') else None,
+        'tem_respiro': tanque.tem_respiro if defined('tanque.tem_respiro') else None,
+        'tem_antitransbordamento': tanque.tem_antitransbordamento if defined('tanque.tem_antitransbordamento') else None
+      }
+      
+      # Se for tripartido, adicionar dados dos compartimentos
+      if dados_tanque['eh_tripartido']:
+        dados_tanque['compartimentos'] = [
+          {
+            'numero': 1,
+            'combustivel': tanque.comb_comp1 if defined('tanque.comb_comp1') else None,
+            'volume': tanque.vol_comp1 if defined('tanque.vol_comp1') else None
+          },
+          {
+            'numero': 2,
+            'combustivel': tanque.comb_comp2 if defined('tanque.comb_comp2') else None,
+            'volume': tanque.vol_comp2 if defined('tanque.vol_comp2') else None
+          },
+          {
+            'numero': 3,
+            'combustivel': tanque.comb_comp3 if defined('tanque.comb_comp3') else None,
+            'volume': tanque.vol_comp3 if defined('tanque.vol_comp3') else None
+          }
+        ]
+        dados_tanque['capacidade'] = tanque.capacidade_total if defined('tanque.capacidade_total') else None
+      
+      # Calcular idade e vida útil
+      if dados_tanque['ano_instalacao']:
+        from datetime import datetime
+        dados_tanque['anos_uso'] = datetime.now().year - dados_tanque['ano_instalacao']
+        
+        # Estimar vida útil baseado no tipo
+        if dados_tanque['parede_dupla'] or dados_tanque['jaquetado']:
+          vida_util_estimada = 20
+        else:
+          vida_util_estimada = 15
+          
+        dados_tanque['vida_util_estimada'] = vida_util_estimada
+        dados_tanque['vida_util_restante'] = max(0, vida_util_estimada - dados_tanque['anos_uso'])
+        dados_tanque['percentual_vida_util'] = round((dados_tanque['anos_uso'] / vida_util_estimada) * 100, 1)
+      
+      lista_tanques.append(dados_tanque)
+    
+    return lista_tanques

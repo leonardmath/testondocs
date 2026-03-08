@@ -1,0 +1,196 @@
+---
+# =============================================================================
+# 🧱 BLOCO: CARACTERIZAÇÃO DO EMPREENDIMENTO
+# =============================================================================
+# Detalhes completos sobre a infraestrutura e operação
+# Usado em: Passivo Ambiental
+# =============================================================================
+
+id: empreendimento
+question: |
+  ⛽ Caracterização do Empreendimento
+subquestion: |
+  Informe os detalhes sobre a infraestrutura e operação do posto.
+
+fields:
+  - note: |
+      #### ⛽ Combustíveis Comercializados
+      
+  - "Selecione os combustíveis vendidos": empreendimento.combustiveis
+    required: False
+    datatype: checkboxes
+    code: lista_combustiveis
+    
+  - note: |
+      ---
+      #### 🏗️ Estrutura Física
+      
+  - "Área total do terreno (m²)": empreendimento.area_terreno
+    datatype: number
+    required: False
+    min: 0
+    hint: "Área total em metros quadrados"
+    
+  - "A pista possui cobertura?": empreendimento.tem_cobertura
+    datatype: yesnoradio
+    required: False
+    
+  - "Material da cobertura": empreendimento.cobertura_material
+    required: False
+    show if: empreendimento.tem_cobertura
+    choices:
+      - Metálica
+      - Concreto
+      - Outro
+      
+  - "Tipo de piso da pista": empreendimento.piso_tipo
+    required: False
+    input type: radio
+    choices:
+      - "Concreto armado usinado": concreto_usinado
+      - "Concreto simples": concreto_simples
+      - "Asfalto": asfalto
+      - "Outro": outro
+      
+  - "Estado de conservação do piso": empreendimento.piso_estado
+    required: False
+    input type: radio
+    choices:
+      - "Bom (sem trincas ou fissuras)": bom
+      - "Regular (poucas trincas)": regular
+      - "Ruim (muitas trincas/fissuras)": ruim
+      
+  - note: |
+      ---
+      #### 🚰 Drenagem e Tratamento
+      
+  - "Possui canaletas de drenagem?": empreendimento.tem_canaletas
+    datatype: yesnoradio
+    required: False
+    
+  - "Tipo de canaletas": empreendimento.canaletas_tipo
+    required: False
+    show if: empreendimento.tem_canaletas
+    input type: radio
+    choices:
+      - "Canaletas oleosas": oleosas
+      - "Canaletas pluviais": pluviais
+      - "Ambas (separadas)": ambas
+      
+  - "Possui caixa separadora água/óleo (CSAO)?": empreendimento.tem_csao
+    datatype: yesnoradio
+    required: False
+    
+  - "Tipo de CSAO": empreendimento.csao_tipo
+    required: False
+    show if: empreendimento.tem_csao
+    input type: radio
+    choices:
+      - "Decantador simples": decantador
+      - "Com placas coalescentes": coalescente
+      - "Outro": outro
+      
+  - "Volume da CSAO (litros)": empreendimento.csao_volume
+    datatype: number
+    required: False
+    show if: empreendimento.tem_csao
+    min: 0
+    
+  - "Frequência de limpeza da CSAO": empreendimento.csao_limpeza_frequencia
+    required: False
+    show if: empreendimento.tem_csao
+    input type: radio
+    choices:
+      - Mensal
+      - Bimestral
+      - Trimestral
+      - Semestral
+      - Anual
+      - Irregular
+      
+  - note: |
+      ---
+      #### 🛢️ Gestão de Resíduos
+      
+  - "Destinação de embalagens de lubrificantes": empreendimento.dest_embalagens
+    required: False
+    input type: radio
+    choices:
+      - "Empresa especializada": especializada
+      - "Coleta municipal": municipal
+      - "Armazenamento temporário": temporario
+      - "Outro": outro
+      
+  - "Destinação de óleo usado": empreendimento.dest_oleo_usado
+    required: False
+    input type: radio
+    choices:
+      - "Empresa especializada": especializada
+      - "Rerrefino": rerrefino
+      - "Outro": outro
+      
+  - "Destinação de resíduos contaminados": empreendimento.dest_residuos_contaminados
+    required: False
+    input type: radio
+    choices:
+      - "Empresa especializada": especializada
+      - "Aterro industrial": aterro
+      - "Outro": outro
+      
+  - note: |
+      ---
+      #### 🔧 Serviços Adicionais
+      
+  - "Possui troca de óleo?": empreendimento.tem_troca_oleo
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui lavador de veículos?": empreendimento.tem_lavador
+    datatype: yesnoradio
+    required: False
+    
+  - "Tipo de lavador": empreendimento.lavador_tipo
+    required: False
+    show if: empreendimento.tem_lavador
+    input type: radio
+    choices:
+      - "Manual": manual
+      - "Automático": automatico
+      - "Misto": misto
+      
+  - "Possui loja de conveniência?": empreendimento.tem_loja
+    datatype: yesnoradio
+    required: False
+    
+  - "Possui borracharia?": empreendimento.tem_borracharia
+    datatype: yesnoradio
+    required: False
+
+section: infraestrutura
+continue button field: empreendimento_preenchido
+---
+code: |
+  def extrair_empreendimento():
+    """Extrai dados do empreendimento para API"""
+    return {
+      'combustiveis': empreendimento.combustiveis.true_values() if defined('empreendimento.combustiveis') else [],
+      'area_terreno': empreendimento.area_terreno if defined('empreendimento.area_terreno') else None,
+      'tem_cobertura': empreendimento.tem_cobertura if defined('empreendimento.tem_cobertura') else None,
+      'cobertura_material': empreendimento.cobertura_material if defined('empreendimento.cobertura_material') else None,
+      'piso_tipo': empreendimento.piso_tipo if defined('empreendimento.piso_tipo') else None,
+      'piso_estado': empreendimento.piso_estado if defined('empreendimento.piso_estado') else None,
+      'tem_canaletas': empreendimento.tem_canaletas if defined('empreendimento.tem_canaletas') else None,
+      'canaletas_tipo': empreendimento.canaletas_tipo if defined('empreendimento.canaletas_tipo') else None,
+      'tem_csao': empreendimento.tem_csao if defined('empreendimento.tem_csao') else None,
+      'csao_tipo': empreendimento.csao_tipo if defined('empreendimento.csao_tipo') else None,
+      'csao_volume': empreendimento.csao_volume if defined('empreendimento.csao_volume') else None,
+      'csao_limpeza_frequencia': empreendimento.csao_limpeza_frequencia if defined('empreendimento.csao_limpeza_frequencia') else None,
+      'dest_embalagens': empreendimento.dest_embalagens if defined('empreendimento.dest_embalagens') else None,
+      'dest_oleo_usado': empreendimento.dest_oleo_usado if defined('empreendimento.dest_oleo_usado') else None,
+      'dest_residuos_contaminados': empreendimento.dest_residuos_contaminados if defined('empreendimento.dest_residuos_contaminados') else None,
+      'tem_troca_oleo': empreendimento.tem_troca_oleo if defined('empreendimento.tem_troca_oleo') else None,
+      'tem_lavador': empreendimento.tem_lavador if defined('empreendimento.tem_lavador') else None,
+      'lavador_tipo': empreendimento.lavador_tipo if defined('empreendimento.lavador_tipo') else None,
+      'tem_loja': empreendimento.tem_loja if defined('empreendimento.tem_loja') else None,
+      'tem_borracharia': empreendimento.tem_borracharia if defined('empreendimento.tem_borracharia') else None
+    }

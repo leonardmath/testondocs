@@ -1,0 +1,116 @@
+---
+# =============================================================================
+# 🧱 BLOCO: TANQUES DE COMBUSTÍVEL
+# =============================================================================
+# Interface YAML para coleta de dados de tanques
+# Lógica processada em tanques_logic.py
+# Versão: 3.0 (Híbrido Python+YAML)
+# =============================================================================
+
+---
+# Importar módulo Python
+modules:
+  - docassemble.relatorios.blocks.tanques_logic
+---
+
+# =============================================================================
+# OBJETOS
+# =============================================================================
+objects:
+  - tanques: DAList.using(object_type=DAObject, auto_gather=False)
+---
+
+# =============================================================================
+# STEP 1: QUANTIDADE DE TANQUES
+# =============================================================================
+question: |
+  🏭 Tanques de Combustível
+subquestion: |
+  ${ tanques_logic.obter_texto_introducao() }
+
+fields:
+  - Quantidade total de tanques: quantidade_tanques
+    datatype: integer
+    min: 1
+    max: 20
+    default: 2
+    help: Informe o número total de tanques subterrâneos no posto
+
+continue button field: tanques_quantidade_informada
+---
+
+# =============================================================================
+# STEP 2: INICIALIZAR LISTA
+# =============================================================================
+code: |
+  # Aguarda quantidade ser informada
+  tanques_quantidade_informada
+  
+  # Inicializa lista com função Python
+  tanques_logic.inicializar_lista_tanques(tanques, quantidade_tanques)
+  
+  tanques_inicializados = True
+---
+
+# =============================================================================
+# STEP 3: COLETAR DADOS DE CADA TANQUE
+# =============================================================================
+question: |
+  ${ tanques_logic.obter_titulo_tanque(i, quantidade_tanques) }
+subquestion: |
+  ${ tanques_logic.obter_instrucoes_tanque(i, quantidade_tanques) }
+
+fields:
+  code: |
+    tanques_logic.gerar_campos_formulario(i)
+---
+
+# =============================================================================
+# STEP 4: FINALIZAÇÃO E VALIDAÇÃO
+# =============================================================================
+code: |
+  # Aguarda inicialização
+  tanques_inicializados
+  
+  # Força coleta de todos os tanques
+  for idx in range(quantidade_tanques):
+    tanques[idx].id
+    tanques[idx].situacao
+    tanques[idx].capacidade
+    tanques[idx].produto
+  
+  # Finaliza com validações
+  resultado_finalizacao = tanques_logic.finalizar_coleta(tanques, quantidade_tanques)
+  
+  if not resultado_finalizacao['sucesso']:
+    # Se houver erros de validação, força nova coleta
+    validation_error(
+      "Foram encontrados erros na validação dos tanques. "
+      "Verifique os dados e corrija os problemas."
+    )
+  
+  # Salvar estatísticas para uso posterior
+  tanques_stats = resultado_finalizacao['estatisticas']
+  tanques_dados_exportacao = resultado_finalizacao['dados_exportacao']
+  
+  # Marca como concluído
+  tanques.gathered = True
+  tanques_preenchido = True
+---
+
+# =============================================================================
+# TELA DE RESUMO (OPCIONAL - para debug/confirmação)
+# =============================================================================
+event: tanques_resumo
+question: |
+  ✅ Tanques Cadastrados com Sucesso
+subquestion: |
+  ${ tanques_logic.gerar_resumo_markdown(tanques_stats) }
+  
+  ---
+  
+  **Próximo passo:** Continuaremos com as bombas de abastecimento.
+
+buttons:
+  - Continuar: continue
+---

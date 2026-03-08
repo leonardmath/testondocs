@@ -1,0 +1,208 @@
+---
+# =============================================================================
+# 🧱 BLOCO: CARACTERIZAÇÃO DO ENTORNO
+# =============================================================================
+# Coleta informações sobre o entorno do empreendimento
+# Usado em: Passivo Ambiental
+# =============================================================================
+
+id: entorno
+question: |
+  🏘️ Caracterização do Entorno
+subquestion: |
+  Informe as características do entorno do empreendimento.
+  
+  <div class="alert alert-info">
+    💡 **Raios de análise:**
+    - **200 metros:** Levantamento de atividades e consumidores de água
+    - **500 metros:** Identificação de poços registrados
+  </div>
+
+fields:
+  - note: |
+      #### 🏠 Ocupação do Entorno (Raio 200m)
+      
+  - "Tipo predominante de ocupação": entorno.ocupacao_predominante
+    required: False
+    input type: checkboxes
+    choices:
+      - Residencial
+      - Comercial
+      - Industrial
+      - Misto (residencial e comercial)
+      - Rural
+      - Área não ocupada
+      
+  - "Densidade de ocupação": entorno.densidade_ocupacao
+    required: False
+    input type: radio
+    choices:
+      - Alta: alta
+      - Média: media
+      - Baixa: baixa
+      
+  - note: |
+      ---
+      #### 🏢 Edificações Sensíveis no Entorno (200m)
+      
+  - "Há hospitais ou clínicas?": entorno.tem_hospitais
+    datatype: yesnoradio
+    required: False
+    
+  - "Quantidade de hospitais/clínicas": entorno.qtd_hospitais
+    datatype: integer
+    required: False
+    show if: entorno.tem_hospitais
+    min: 0
+    
+  - "Há escolas?": entorno.tem_escolas
+    datatype: yesnoradio
+    required: False
+    
+  - "Quantidade de escolas": entorno.qtd_escolas
+    datatype: integer
+    required: False
+    show if: entorno.tem_escolas
+    min: 0
+    
+  - "Há creches?": entorno.tem_creches
+    datatype: yesnoradio
+    required: False
+    
+  - "Quantidade de creches": entorno.qtd_creches
+    datatype: integer
+    required: False
+    show if: entorno.tem_creches
+    min: 0
+    
+  - "Há asilos ou casas de repouso?": entorno.tem_asilos
+    datatype: yesnoradio
+    required: False
+    
+  - "Outras edificações sensíveis": entorno.outras_edificacoes
+    datatype: area
+    required: False
+    rows: 2
+    hint: "Ex: corpo de bombeiros, igreja, mercado, farmácia"
+    
+  - note: |
+      ---
+      #### 💧 Poços Tubulares
+      
+  - "Foram identificados poços no raio de 500m?": entorno.tem_pocos_500m
+    datatype: yesnoradio
+    required: False
+    
+  - "Quantidade de poços (500m)": entorno.qtd_pocos_500m
+    datatype: integer
+    required: False
+    show if: entorno.tem_pocos_500m
+    min: 0
+    
+  - "Foram identificados poços no raio de 200m?": entorno.tem_pocos_200m
+    datatype: yesnoradio
+    required: False
+    
+  - "Quantidade de poços (200m)": entorno.qtd_pocos_200m
+    datatype: integer
+    required: False
+    show if: entorno.tem_pocos_200m
+    min: 0
+    
+  - "O empreendimento possui poço próprio?": entorno.tem_poco_proprio
+    datatype: yesnoradio
+    required: False
+    
+  - "Profundidade do poço próprio (m)": entorno.poco_proprio_profundidade
+    datatype: number
+    required: False
+    show if: entorno.tem_poco_proprio
+    min: 0
+    
+  - note: |
+      ---
+      #### 🚰 Abastecimento e Serviços
+      
+  - "Abastecimento de água": entorno.abastecimento_agua
+    required: False
+    input type: radio
+    choices:
+      - "Rede pública (SANEPAR ou similar)": publico
+      - "Poço próprio": poco
+      - "Misto (rede + poço)": misto
+      - "Outro": outro
+      
+  - "Especifique o tipo de abastecimento": entorno.abastecimento_especificar
+    required: False
+    show if:
+      variable: entorno.abastecimento_agua
+      is: outro
+      
+  - "Fornecimento de energia": entorno.fornecimento_energia
+    required: False
+    default: "COPEL"
+    hint: "Ex: COPEL, CEMIG, CPFL"
+    
+  - note: |
+      ---
+      #### 🌊 Hidrografia
+      
+  - "Há corpos d'água próximos?": entorno.tem_corpos_agua
+    datatype: yesnoradio
+    required: False
+    
+  - "Descrição dos corpos d'água": entorno.corpos_agua_descricao
+    datatype: area
+    required: False
+    show if: entorno.tem_corpos_agua
+    rows: 2
+    hint: "Tipo (rio, córrego, lagoa), distância, nome"
+    
+  - "Bacia hidrográfica": entorno.bacia_hidrografica
+    required: False
+    hint: "Nome da bacia hidrográfica"
+    
+  - note: |
+      ---
+      #### 📊 Evolução Temporal
+      
+  - "Houve aumento significativo de edificações nos últimos anos?": entorno.aumento_edificacoes
+    datatype: yesnoradio
+    required: False
+    
+  - "Período analisado (anos)": entorno.periodo_analise
+    required: False
+    hint: "Ex: 2012-2024"
+
+section: entorno
+continue button field: entorno_preenchido
+---
+# Código para extrair dados do bloco
+code: |
+  def extrair_entorno():
+    """Extrai dados do entorno para envio à API"""
+    return {
+      'ocupacao_predominante': entorno.ocupacao_predominante.true_values() if defined('entorno.ocupacao_predominante') else [],
+      'densidade_ocupacao': entorno.densidade_ocupacao if defined('entorno.densidade_ocupacao') else None,
+      'tem_hospitais': entorno.tem_hospitais if defined('entorno.tem_hospitais') else None,
+      'qtd_hospitais': entorno.qtd_hospitais if defined('entorno.qtd_hospitais') else 0,
+      'tem_escolas': entorno.tem_escolas if defined('entorno.tem_escolas') else None,
+      'qtd_escolas': entorno.qtd_escolas if defined('entorno.qtd_escolas') else 0,
+      'tem_creches': entorno.tem_creches if defined('entorno.tem_creches') else None,
+      'qtd_creches': entorno.qtd_creches if defined('entorno.qtd_creches') else 0,
+      'tem_asilos': entorno.tem_asilos if defined('entorno.tem_asilos') else None,
+      'outras_edificacoes': entorno.outras_edificacoes if defined('entorno.outras_edificacoes') else None,
+      'tem_pocos_500m': entorno.tem_pocos_500m if defined('entorno.tem_pocos_500m') else None,
+      'qtd_pocos_500m': entorno.qtd_pocos_500m if defined('entorno.qtd_pocos_500m') else 0,
+      'tem_pocos_200m': entorno.tem_pocos_200m if defined('entorno.tem_pocos_200m') else None,
+      'qtd_pocos_200m': entorno.qtd_pocos_200m if defined('entorno.qtd_pocos_200m') else 0,
+      'tem_poco_proprio': entorno.tem_poco_proprio if defined('entorno.tem_poco_proprio') else None,
+      'poco_proprio_profundidade': entorno.poco_proprio_profundidade if defined('entorno.poco_proprio_profundidade') else None,
+      'abastecimento_agua': entorno.abastecimento_agua if defined('entorno.abastecimento_agua') else None,
+      'fornecimento_energia': entorno.fornecimento_energia if defined('entorno.fornecimento_energia') else None,
+      'tem_corpos_agua': entorno.tem_corpos_agua if defined('entorno.tem_corpos_agua') else None,
+      'corpos_agua_descricao': entorno.corpos_agua_descricao if defined('entorno.corpos_agua_descricao') else None,
+      'bacia_hidrografica': entorno.bacia_hidrografica if defined('entorno.bacia_hidrografica') else None,
+      'aumento_edificacoes': entorno.aumento_edificacoes if defined('entorno.aumento_edificacoes') else None,
+      'periodo_analise': entorno.periodo_analise if defined('entorno.periodo_analise') else None
+    }

@@ -1,0 +1,290 @@
+---
+# =============================================================================
+# BLOCO: Modelo Conceitual de Exposição
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Identificação de áreas fonte, vias de exposição e receptores
+# =============================================================================
+
+---
+objects:
+  - modelo_conceitual: DAObject
+  - areas_fonte: DAList.using(object_type=DAObject)
+---
+question: |
+  🧪 Modelo Conceitual de Exposição
+subquestion: |
+  O modelo conceitual identifica as **relações entre fontes de contaminação, 
+  vias de exposição e receptores potenciais**.
+  
+  É um requisito da **Resolução CONAMA 420/2009** e **Decisão de Diretoria 
+  CETESB 038/2017**.
+
+section: investigacao
+field: elaborar_modelo_conceitual
+buttons:
+  - "Sim, elaborar": True
+  - "Não, pular esta etapa": False
+---
+question: |
+  🎯 Áreas Fontes de Contaminação
+subquestion: |
+  Identifique as áreas com potencial de liberação de contaminantes.
+  
+  **Áreas típicas em postos:**
+  - Pista de abastecimento (AP)
+  - Tanques subterrâneos (TQ)
+  - Área de descarga (AD)
+  - Gerador (GE)
+  - Troca de óleo (TO)
+  - Lavador (LV)
+
+fields:
+  - "Quantas áreas fonte identificar?": areas_fonte.target_number
+    datatype: integer
+    min: 1
+    max: 20
+    default: 3
+---
+question: |
+  📍 Área Fonte ${ i + 1 } de ${ areas_fonte.target_number }
+fields:
+  - note: |
+      **Identificação da Área**
+  
+  - "Nome/Identificação": areas_fonte[i].nome
+    hint: "Ex: Pista de abastecimento, Tanque T01, etc"
+  
+  - "Categoria": areas_fonte[i].categoria
+    code: |
+      [
+        "AP - Área de Pista",
+        "TQ - Tanques",
+        "AD - Área de Descarga",
+        "GE - Gerador",
+        "TO - Troca de Óleo",
+        "LV - Lavador",
+        "Outra"
+      ]
+  
+  - "Especificar categoria": areas_fonte[i].categoria_outra
+    show if:
+      variable: areas_fonte[i].categoria
+      is: "Outra"
+  
+  - note: |
+      ---
+      **Fontes Primárias**
+  
+  - "Fontes de contaminação na área": areas_fonte[i].fontes_primarias
+    datatype: checkboxes
+    none of the above: False
+    choices:
+      - Tanques subterrâneos
+      - Linhas de sucção
+      - Bombas de abastecimento
+      - Respiro de tanques
+      - Canaletas de drenagem
+      - Caixa separadora água-óleo
+      - Piso impermeabilizado
+      - Área de descarga
+      - Gerador diesel
+      - Outros
+  
+  - "Descrever outras fontes": areas_fonte[i].fontes_outras
+    show if: areas_fonte[i].fontes_primarias['Outros']
+    required: False
+    datatype: area
+    rows: 2
+  
+  - note: |
+      ---
+      **Mecanismos de Liberação**
+  
+  - "Como os contaminantes podem ser liberados?": areas_fonte[i].mecanismos
+    datatype: checkboxes
+    choices:
+      - Vazamento de tanques
+      - Vazamento de tubulações
+      - Infiltração no solo
+      - Escoamento superficial
+      - Derramamento acidental
+      - Transbordamento
+      - Corrosão de equipamentos
+      - Falha de contenção
+  
+  - note: |
+      ---
+      **Vias de Exposição**
+  
+  - "Vias de transporte dos contaminantes": areas_fonte[i].vias_exposicao
+    datatype: checkboxes
+    choices:
+      - Água subterrânea
+      - Solo superficial
+      - Solo subsuperficial
+      - Gases no solo
+      - Vapores em ambientes fechados
+      - Águas superficiais
+      - Sedimentos
+  
+  - note: |
+      ---
+      **Receptores Potenciais**
+  
+  - "Quem pode ser exposto?": areas_fonte[i].receptores
+    datatype: checkboxes
+    choices:
+      - Funcionários do posto
+      - Clientes
+      - População adjacente
+      - Trabalhadores de obras
+      - Recursos hídricos
+      - Ecossistemas aquáticos
+      - Solo/vegetação
+---
+# =============================================================================
+# CÓDIGO: Processamento do modelo conceitual
+# =============================================================================
+code: |
+  # Consolidar informações
+  total_areas_fonte = len(areas_fonte)
+  
+  # Todas as vias de exposição identificadas
+  todas_vias = set()
+  for area in areas_fonte:
+    if hasattr(area, 'vias_exposicao'):
+      todas_vias.update(area.vias_exposicao.true_values())
+  
+  # Todos os receptores
+  todos_receptores = set()
+  for area in areas_fonte:
+    if hasattr(area, 'receptores'):
+      todos_receptores.update(area.receptores.true_values())
+  
+  # Classificação de risco (simplificado)
+  score_risco = 0
+  
+  # +10 pontos por via de exposição crítica
+  if "Água subterrânea" in todas_vias:
+    score_risco += 15
+  if "Vapores em ambientes fechados" in todas_vias:
+    score_risco += 15
+  if "Gases no solo" in todas_vias:
+    score_risco += 10
+  
+  # +10 pontos por receptor sensível
+  if "População adjacente" in todos_receptores:
+    score_risco += 15
+  if "Recursos hídricos" in todos_receptores:
+    score_risco += 10
+  if "Funcionários do posto" in todos_receptores:
+    score_risco += 5
+  
+  # +5 pontos por área fonte
+  score_risco += total_areas_fonte * 5
+  
+  # Classificação
+  if score_risco >= 60:
+    classificacao_risco = "ALTO"
+    cor_risco = "vermelho"
+  elif score_risco >= 30:
+    classificacao_risco = "MÉDIO"
+    cor_risco = "amarelo"
+  else:
+    classificacao_risco = "BAIXO"
+    cor_risco = "verde"
+  
+  # Payload para API
+  modelo_conceitual_payload = []
+  for area in areas_fonte:
+    modelo_conceitual_payload.append({
+      "area_fonte": area.nome,
+      "categoria": area.categoria if area.categoria != "Outra" else area.categoria_outra,
+      "fontes_primarias": list(area.fontes_primarias.true_values()) if hasattr(area, 'fontes_primarias') else [],
+      "mecanismos_liberacao": list(area.mecanismos.true_values()) if hasattr(area, 'mecanismos') else [],
+      "vias_exposicao": list(area.vias_exposicao.true_values()) if hasattr(area, 'vias_exposicao') else [],
+      "receptores_potenciais": list(area.receptores.true_values()) if hasattr(area, 'receptores') else []
+    })
+  
+  modelo_conceitual_preenchido = True
+---
+# =============================================================================
+# RESUMO: Template para exibição
+# =============================================================================
+template: resumo_modelo_conceitual
+content: |
+  ### 🧪 Modelo Conceitual de Exposição
+  
+  % if elaborar_modelo_conceitual:
+  
+  **Classificação de Risco:** <span style="color: ${ cor_risco }; font-weight: bold;">${ classificacao_risco }</span> (${ score_risco } pontos)
+  
+  **Áreas Fonte Identificadas:** ${ total_areas_fonte }  
+  **Vias de Exposição:** ${ len(todas_vias) }  
+  **Receptores:** ${ len(todos_receptores) }
+  
+  ---
+  
+  % for area in areas_fonte:
+  
+  **${ area.nome }** (${ area.categoria })
+  
+  % if hasattr(area, 'fontes_primarias'):
+  _Fontes primárias:_
+  % for fonte in area.fontes_primarias.true_values():
+  - ${ fonte }
+  % endfor
+  % endif
+  
+  % if hasattr(area, 'mecanismos'):
+  _Mecanismos de liberação:_
+  % for mec in area.mecanismos.true_values():
+  - ${ mec }
+  % endfor
+  % endif
+  
+  % if hasattr(area, 'vias_exposicao'):
+  _Vias de exposição:_
+  % for via in area.vias_exposicao.true_values():
+  - ${ via }
+  % endfor
+  % endif
+  
+  % if hasattr(area, 'receptores'):
+  _Receptores potenciais:_
+  % for rec in area.receptores.true_values():
+  - ${ rec }
+  % endfor
+  % endif
+  
+  ---
+  % endfor
+  
+  **Recomendações:**
+  
+  % if classificacao_risco == "ALTO":
+  ⚠️ **Risco elevado** - Recomenda-se:
+  - Investigação ambiental detalhada
+  - Monitoramento intensivo
+  - Avaliação de risco à saúde humana
+  - Medidas de intervenção imediatas
+  
+  % elif classificacao_risco == "MÉDIO":
+  ⚠️ **Risco moderado** - Recomenda-se:
+  - Investigação ambiental confirmatória
+  - Monitoramento periódico
+  - Avaliação de medidas preventivas
+  
+  % else:
+  ✅ **Risco baixo** - Recomenda-se:
+  - Monitoramento preventivo
+  - Manutenção das boas práticas operacionais
+  % endif
+  
+  % else:
+  
+  ❌ **Modelo conceitual não elaborado**
+  
+  % endif

@@ -1,0 +1,382 @@
+---
+# =============================================================================
+# BLOCO: Ficha de Vistoria Técnica
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Ficha completa de vistoria conforme modelo fornecido
+# =============================================================================
+
+---
+objects:
+  - vistoria: DAObject
+  - sistemas_seguranca: DAObject
+  - sistemas_tratamento: DAObject
+  - infra_sanitaria: DAObject
+---
+question: |
+  📋 Ficha de Vistoria Técnica
+subquestion: |
+  **Data da vistoria:** ${ today().format('dd/MM/yyyy') }
+  
+  Preencha as informações observadas durante a vistoria técnica do empreendimento.
+
+section: investigacao
+fields:
+  - note: |
+      **👤 Responsável pelas Informações**
+  
+  - "Nome": vistoria.responsavel_nome
+  
+  - "Cargo": vistoria.responsavel_cargo
+    choices:
+      - Proprietário
+      - Gerente
+      - Responsável Técnico
+      - Outro
+  
+  - "Especificar": vistoria.responsavel_cargo_outro
+    show if:
+      variable: vistoria.responsavel_cargo
+      is: "Outro"
+
+continue button field: vistoria_responsavel_preenchido
+---
+question: |
+  🔐 Sistemas de Segurança - Pistas de Abastecimento
+fields:
+  - note: |
+      **🛣️ Pista de Abastecimento**
+  
+  - "Piso em concreto armado?": sistemas_seguranca.pista_concreto
+    datatype: yesnoradio
+  
+  - "Sistema de drenagem oleosa?": sistemas_seguranca.pista_drenagem_oleosa
+    datatype: yesnoradio
+  
+  - note: |
+      ---
+      **📦 Área de Descarga**
+  
+  - "Piso em concreto armado?": sistemas_seguranca.descarga_concreto
+    datatype: yesnoradio
+  
+  - "Sistema de drenagem oleosa?": sistemas_seguranca.descarga_drenagem_oleosa
+    datatype: yesnoradio
+  
+  - "Descarga selada (restritor de mangueira)?": sistemas_seguranca.descarga_selada
+    datatype: yesnoradio
+    help: |
+      NBR 15.138 - Restritor de mangueira
+  
+  - "Sistema de respiro de tanques?": sistemas_seguranca.respiro_tanques
+    datatype: yesnoradio
+
+continue button field: sistemas_seguranca_pistas_preenchido
+---
+question: |
+  🔐 Sistemas de Segurança - Controles
+fields:
+  - note: |
+      **🛡️ Dispositivos de Proteção**
+  
+  - "Spill nos tanques (NBR 15.118)?": sistemas_seguranca.spill_tanques
+    datatype: yesnoradio
+    help: |
+      Dispositivo de contenção em bocas de tanque
+  
+  - "Controle de estoque?": sistemas_seguranca.controle_estoque
+    datatype: yesnoradio
+  
+  - "Tipo de controle": sistemas_seguranca.tipo_controle_estoque
+    show if: sistemas_seguranca.controle_estoque
+    choices:
+      - Manual
+      - Automático
+  
+  - note: |
+      ---
+      **📡 Sensores de Monitoramento**
+  
+  - "Possui sensores de monitoramento?": sistemas_seguranca.sensor_monitoramento
+    datatype: yesnoradio
+  
+  - "Locais dos sensores": sistemas_seguranca.sensores_em
+    datatype: checkboxes
+    show if: sistemas_seguranca.sensor_monitoramento
+    choices:
+      - Bombas
+      - Filtros
+      - Tanques
+      - Tubulações
+  
+  - "Aparelho/Marca": sistemas_seguranca.aparelho_sensores
+    show if: sistemas_seguranca.sensor_monitoramento
+    required: False
+  
+  - note: |
+      ---
+      **🏗️ Contenções (NBR 15.138)**
+  
+  - "Câmara de contenção em unidade abastecedora (sump de bomba)?": sistemas_seguranca.sump_bomba
+    datatype: yesnoradio
+  
+  - "Canaleta interna na cobertura (NBR 14605)?": sistemas_seguranca.canaleta_interna
+    datatype: yesnoradio
+  
+  - "Câmara de contenção na filtragem de diesel?": sistemas_seguranca.contencao_filtro_diesel
+    datatype: yesnoradio
+
+continue button field: sistemas_seguranca_controles_preenchido
+---
+question: |
+  🧪 Sistemas de Tratamento de Efluentes
+fields:
+  - note: |
+      **💧 Caixa Separadora Água-Óleo (CSAO)**
+  
+  - "CSAO das pistas?": sistemas_tratamento.csao_pistas
+    datatype: yesnoradio
+  
+  - "Tipo de CSAO": sistemas_tratamento.csao_pistas_tipo
+    show if: sistemas_tratamento.csao_pistas
+    choices:
+      - Placas coalescentes
+      - Gravidade simples
+      - Outro
+    required: False
+  
+  - "CSAO da lavagem?": sistemas_tratamento.csao_lavagem
+    datatype: yesnoradio
+  
+  - "Volume (m³)": sistemas_tratamento.csao_lavagem_volume
+    datatype: number
+    show if: sistemas_tratamento.csao_lavagem
+    required: False
+  
+  - note: |
+      ---
+      **♻️ Reúso e Destinação**
+  
+  - "Possui sistema de reúso de efluentes?": sistemas_tratamento.reuso_efluentes
+    datatype: yesnoradio
+  
+  - note: |
+      ---
+      **🔧 Filtro de Diesel**
+  
+  - "Possui filtro de diesel?": sistemas_tratamento.filtro_diesel
+    datatype: yesnoradio
+  
+  - "Localização do filtro": sistemas_tratamento.filtro_diesel_local
+    show if: sistemas_tratamento.filtro_diesel
+    datatype: checkboxes
+    choices:
+      - Área descoberta
+      - Área coberta
+      - Piso concretado
+      - Com drenagem oleosa
+
+continue button field: sistemas_tratamento_preenchido
+---
+question: |
+  🚰 Infraestrutura Sanitária
+fields:
+  - note: |
+      **🌧️ Drenagem Pluvial**
+  
+  - "Rede de drenagem pluvial existe?": infra_sanitaria.drenagem_pluvial_existe
+    datatype: yesnoradio
+  
+  - "Independente da drenagem oleosa?": infra_sanitaria.drenagem_independente
+    datatype: yesnoradio
+    show if: infra_sanitaria.drenagem_pluvial_existe
+  
+  - note: |
+      ---
+      **🚽 Esgoto Sanitário**
+  
+  - "Rede pública de esgoto existe?": infra_sanitaria.rede_esgoto_existe
+    datatype: yesnoradio
+  
+  - "Empreendimento ligado à rede pública?": infra_sanitaria.ligado_rede_esgoto
+    datatype: yesnoradio
+    show if: infra_sanitaria.rede_esgoto_existe
+  
+  - "Possui tratamento local?": infra_sanitaria.tratamento_local
+    datatype: yesnoradio
+  
+  - "Tipo de tratamento": infra_sanitaria.tipo_tratamento_local
+    datatype: checkboxes
+    show if: infra_sanitaria.tratamento_local
+    choices:
+      - Fossa séptica
+      - Filtro biológico
+      - Sumidouro
+      - Outro
+  
+  - note: |
+      ---
+      **💧 Abastecimento de Água**
+  
+  - "Origem da água": infra_sanitaria.abastecimento_agua
+    choices:
+      - Rede pública
+      - Poço tubular
+      - Poço comum
+      - Rio
+      - Mina
+  
+  - "Possui outorga?": infra_sanitaria.possui_outorga
+    datatype: yesnoradio
+    show if:
+      variable: infra_sanitaria.abastecimento_agua
+      is: "Poço tubular"
+  
+  - "Bacia hidrográfica": infra_sanitaria.bacia_hidrografica
+    required: False
+
+continue button field: infra_sanitaria_preenchida
+---
+question: |
+  🗑️ Resíduos - Óleo Usado
+fields:
+  - note: |
+      **🛢️ Armazenamento de Óleo Usado**
+  
+  - "Possui área de armazenamento Classe I?": vistoria.area_classe_i
+    datatype: yesnoradio
+  
+  - "Forma de armazenamento do óleo usado": vistoria.armazenamento_oleo
+    datatype: checkboxes
+    required: False
+    choices:
+      - Tanque subterrâneo
+      - Poço simples
+      - Poço dupla parede
+      - Com monitoramento intersticial
+      - Tambor
+      - Tanque aéreo
+      - Bacia de contenção
+      - Área coberta
+
+continue button field: residuos_preenchido
+---
+question: |
+  🚗 Lavagem de Veículos
+fields:
+  - "Possui lavador de veículos?": vistoria.lavagem_existe
+    datatype: yesnoradio
+  
+  - note: |
+      **Infraestrutura do Lavador**
+    show if: vistoria.lavagem_existe
+  
+  - "Área coberta?": vistoria.lavagem_area_coberta
+    datatype: yesnoradio
+    show if: vistoria.lavagem_existe
+  
+  - "Tipo de cobertura": vistoria.lavagem_tipo_cobertura
+    show if: vistoria.lavagem_area_coberta
+    choices:
+      - Integral
+      - Parcial
+      - Céu aberto
+  
+  - note: |
+      **Tratamento de Efluentes**
+    show if: vistoria.lavagem_existe
+  
+  - "Possui decantador?": vistoria.lavagem_decantador
+    datatype: yesnoradio
+    show if: vistoria.lavagem_existe
+  
+  - "CSAO própria?": vistoria.lavagem_csao_propria
+    datatype: yesnoradio
+    show if: vistoria.lavagem_existe
+  
+  - "Destino do efluente": vistoria.lavagem_destino
+    datatype: checkboxes
+    show if: vistoria.lavagem_existe
+    choices:
+      - Rede de esgotos
+      - Solo
+      - Galeria pluvial
+      - Rio
+      - Reúso
+
+continue button field: lavagem_preenchida
+---
+# =============================================================================
+# CÓDIGO: Consolidar ficha de vistoria
+# =============================================================================
+code: |
+  ficha_vistoria_payload = {
+    "metadata": {
+      "data_vistoria": today().format('yyyy-MM-dd'),
+      "responsavel_informacoes": vistoria.responsavel_nome if defined('vistoria.responsavel_nome') else None,
+      "cargo_responsavel": vistoria.responsavel_cargo if defined('vistoria.responsavel_cargo') else None
+    },
+    
+    "sistemas_seguranca": {
+      "pistas_abastecimento": {
+        "piso_concreto_armado": sistemas_seguranca.pista_concreto if defined('sistemas_seguranca.pista_concreto') else False,
+        "sistema_drenagem_oleosa": sistemas_seguranca.pista_drenagem_oleosa if defined('sistemas_seguranca.pista_drenagem_oleosa') else False
+      },
+      "area_descarga": {
+        "piso_concreto_armado": sistemas_seguranca.descarga_concreto if defined('sistemas_seguranca.descarga_concreto') else False,
+        "sistema_drenagem_oleosa": sistemas_seguranca.descarga_drenagem_oleosa if defined('sistemas_seguranca.descarga_drenagem_oleosa') else False,
+        "descarga_selada": sistemas_seguranca.descarga_selada if defined('sistemas_seguranca.descarga_selada') else False,
+        "sistema_respiro_tanques": sistemas_seguranca.respiro_tanques if defined('sistemas_seguranca.respiro_tanques') else False
+      },
+      "controles": {
+        "spill_tanques": sistemas_seguranca.spill_tanques if defined('sistemas_seguranca.spill_tanques') else False,
+        "controle_estoque": sistemas_seguranca.controle_estoque if defined('sistemas_seguranca.controle_estoque') else False,
+        "tipo_controle_estoque": sistemas_seguranca.tipo_controle_estoque if defined('sistemas_seguranca.tipo_controle_estoque') else None,
+        "sensor_monitoramento": sistemas_seguranca.sensor_monitoramento if defined('sistemas_seguranca.sensor_monitoramento') else False
+      },
+      "contencoes": {
+        "sump_bomba": sistemas_seguranca.sump_bomba if defined('sistemas_seguranca.sump_bomba') else False,
+        "canaleta_interna": sistemas_seguranca.canaleta_interna if defined('sistemas_seguranca.canaleta_interna') else False,
+        "contencao_filtro_diesel": sistemas_seguranca.contencao_filtro_diesel if defined('sistemas_seguranca.contencao_filtro_diesel') else False
+      }
+    },
+    
+    "sistemas_tratamento": {
+      "csao_pistas": {
+        "possui": sistemas_tratamento.csao_pistas if defined('sistemas_tratamento.csao_pistas') else False,
+        "tipo": sistemas_tratamento.csao_pistas_tipo if defined('sistemas_tratamento.csao_pistas_tipo') else None
+      },
+      "csao_lavagem": {
+        "possui": sistemas_tratamento.csao_lavagem if defined('sistemas_tratamento.csao_lavagem') else False,
+        "volume_m3": sistemas_tratamento.csao_lavagem_volume if defined('sistemas_tratamento.csao_lavagem_volume') else None
+      },
+      "reuso_efluentes": sistemas_tratamento.reuso_efluentes if defined('sistemas_tratamento.reuso_efluentes') else False
+    },
+    
+    "infraestrutura_sanitaria": {
+      "drenagem_pluvial": {
+        "rede_existe": infra_sanitaria.drenagem_pluvial_existe if defined('infra_sanitaria.drenagem_pluvial_existe') else False,
+        "independente_drenagem_oleosa": infra_sanitaria.drenagem_independente if defined('infra_sanitaria.drenagem_independente') else False
+      },
+      "esgoto": {
+        "rede_publica_existe": infra_sanitaria.rede_esgoto_existe if defined('infra_sanitaria.rede_esgoto_existe') else False,
+        "ligado_rede_publica": infra_sanitaria.ligado_rede_esgoto if defined('infra_sanitaria.ligado_rede_esgoto') else False,
+        "tratamento_local": infra_sanitaria.tratamento_local if defined('infra_sanitaria.tratamento_local') else False
+      },
+      "agua": {
+        "abastecimento": infra_sanitaria.abastecimento_agua if defined('infra_sanitaria.abastecimento_agua') else None,
+        "bacia_hidrografica": infra_sanitaria.bacia_hidrografica if defined('infra_sanitaria.bacia_hidrografica') else None
+      }
+    },
+    
+    "lavagem_veiculos": {
+      "existe": vistoria.lavagem_existe if defined('vistoria.lavagem_existe') else False,
+      "infraestrutura": {
+        "area_coberta": vistoria.lavagem_area_coberta if defined('vistoria.lavagem_area_coberta') else False,
+        "cobertura": vistoria.lavagem_tipo_cobertura if defined('vistoria.lavagem_tipo_cobertura') else None
+      }
+    }
+  }
+  
+  ficha_vistoria_preenchida = True

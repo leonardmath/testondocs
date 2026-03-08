@@ -1,0 +1,517 @@
+# docassemble/interviews/nr13.yml
+---
+# =============================================================================
+# ENTREVISTA: NR13 - Caldeiras e Vasos de Pressão
+# =============================================================================
+# Reutiliza blocos: cadastrais, contato, endereço, tanques (adaptado)
+# =============================================================================
+
+include:
+  - _config/config-base.yml
+  - _config/listas-dados.yml
+  - blocks/_shared/dados-cadastrais.yml
+  - blocks/_shared/contato.yml
+  - blocks/_shared/endereco.yml
+---
+metadata:
+  title: "NR13 - Caldeiras e Vasos de Pressão"
+  short title: "NR13"
+  description: "Documentação técnica para caldeiras e vasos de pressão"
+  version: "1.0.0"
+---
+sections:
+  - intro: "🏠 Início"
+  - cadastro: "🏢 Cadastro"
+  - equipamentos: "🔧 Equipamentos"
+  - inspecoes: "🔍 Inspeções"
+  - responsavel: "👨‍🔧 Responsável Técnico"
+  - validacao: "✅ Revisão"
+---
+code: |
+  protocolo_entrevista = gerar_protocolo("NR")
+  tipo_entrevista = "nr13"
+  data_inicio_entrevista = current_datetime()
+---
+mandatory: True
+code: |
+  if not defined('usuario_viu_intro'):
+    tela_intro_nr13
+    usuario_viu_intro = True
+  
+  if revisao_solicitada:
+    tela_validacao_nr13
+    if usuario_confirma_envio:
+      resultado_envio = enviar_dados_nr13()
+      tela_conclusao_nr13
+---
+# Introdução NR13
+id: intro_nr13
+section: intro
+event: tela_intro_nr13
+question: |
+  Bem-vindo ao Sistema NR13
+subquestion: |
+  <div style="text-align: center; margin: 2rem 0;">
+    <h3>🔧 Caldeiras e Vasos de Pressão</h3>
+  </div>
+  
+  Este formulário coleta informações para documentação técnica conforme **NR13** 
+  do Ministério do Trabalho.
+  
+  ---
+  
+  ### 📋 Equipamentos Cobertos
+  
+  - Caldeiras a vapor
+  - Vasos de pressão
+  - Tanques pressurizados
+  - Autoclaves
+  - Compressores
+  
+  ---
+  
+  ### 📝 Informações Necessárias
+  
+  - Dados técnicos dos equipamentos
+  - Histórico de inspeções
+  - Responsável técnico habilitado
+  - Documentação de segurança
+  
+  ---
+  
+  **⏱️ Tempo estimado: 15-25 minutos**
+  
+  **📋 Protocolo:** `${ protocolo_entrevista }`
+
+buttons:
+  - "🚀 Começar": continue
+---
+# Equipamentos (similar a tanques, mas com campos NR13)
+objects:
+  - equipamentos: DAList.using(object_type=DAObject, complete_attribute='completo')
+---
+id: nr13_equipamentos
+section: equipamentos
+question: |
+  🔧 Equipamentos Sujeitos à NR13
+subquestion: |
+  Adicione todos os equipamentos sujeitos à NR13.
+  
+  <div class="alert alert-warning">
+    ⚠️ <strong>NR13 aplica-se a:</strong>
+    <ul>
+      <li>Caldeiras a vapor com pressão > 60 kPa</li>
+      <li>Vasos de pressão com PV > 8 ou PA > 0,5 MPa</li>
+      <li>Tanques pressurizados</li>
+    </ul>
+  </div>
+  
+  % if len(equipamentos) > 0:
+  **Total de equipamentos:** ${ len(equipamentos) }
+  % endif
+  
+  ${ equipamentos.table }
+  
+  ${ equipamentos.add_action("➕ Adicionar Equipamento") }
+
+continue button field: equipamentos_preenchidos
+---
+table: equipamentos.table
+rows: equipamentos
+columns:
+  - Nº: row_index + 1
+  - Tipo: row_item.tipo_equipamento if defined('row_item.tipo_equipamento') else '—'
+  - Capacidade: |
+      str(row_item.capacidade) + ' ' + row_item.unidade_capacidade if defined('row_item.capacidade') else '—'
+  - Pressão: |
+      str(row_item.pressao_trabalho) + ' MPa' if defined('row_item.pressao_trabalho') else '—'
+  - Categoria: row_item.categoria_nr13 if defined('row_item.categoria_nr13') else '—'
+edit:
+  - tipo_equipamento
+delete buttons: True
+confirm: True
+---
+# Dados de cada equipamento
+id: equipamento_individual
+question: |
+  🔧 Equipamento ${ ordinal(i) }
+subquestion: |
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - note: |
+      #### 📋 Identificação
+  
+  - "Tipo de equipamento": equipamentos[i].tipo_equipamento
+    required: False
+    input type: radio
+    choices:
+      - "Caldeira a vapor": caldeira
+      - "Vaso de pressão": vaso
+      - "Tanque pressurizado": tanque
+      - "Autoclave": autoclave
+      - "Compressor": compressor
+      - "Outro": outro
+  
+  - "Identificação/Tag": equipamentos[i].tag
+    required: False
+    hint: "Ex: CALDEIRA-01, VP-205"
+  
+  - "Número de série": equipamentos[i].numero_serie
+    required: False
+  
+  - "Fabricante": equipamentos[i].fabricante
+    required: False
+  
+  - "Ano de fabricação": equipamentos[i].ano_fabricacao
+    datatype: integer
+    required: False
+    min: 1950
+    max: 2030
+  
+  - note: |
+      ---
+      #### ⚙️ Características Técnicas
+  
+  - "Capacidade": equipamentos[i].capacidade
+    datatype: number
+    required: False
+    min: 0
+  
+  - "Unidade": equipamentos[i].unidade_capacidade
+    required: False
+    input type: radio
+    choices:
+      - "litros": litros
+      - "m³": m3
+      - "kg/h (vapor)": kg_h
+  
+  - "Pressão de trabalho (MPa)": equipamentos[i].pressao_trabalho
+    datatype: number
+    required: False
+    min: 0
+    hint: "Em Megapascal (MPa)"
+  
+  - "Pressão máxima de trabalho admissível (PMTA)": equipamentos[i].pmta
+    datatype: number
+    required: False
+    min: 0
+    hint: "Em MPa"
+  
+  - "Temperatura de trabalho (°C)": equipamentos[i].temperatura_trabalho
+    datatype: number
+    required: False
+  
+  - "Fluido de trabalho": equipamentos[i].fluido
+    required: False
+    hint: "Ex: Vapor d'água, Ar comprimido, GLP"
+  
+  - note: |
+      ---
+      #### 🏷️ Classificação NR13
+  
+  - "Categoria NR13": equipamentos[i].categoria_nr13
+    required: False
+    input type: radio
+    choices:
+      - "Categoria I": cat_i
+      - "Categoria II": cat_ii
+      - "Categoria III": cat_iii
+      - "Categoria IV": cat_iv
+      - "Categoria V": cat_v
+    help: |
+      Categoria baseada em classe de fluido e grupo de potencial de risco
+  
+  - "Classe de fluido": equipamentos[i].classe_fluido
+    required: False
+    input type: radio
+    choices:
+      - "Classe A - Inflamável": classe_a
+      - "Classe B - Tóxico": classe_b
+      - "Classe C - Neutro": classe_c
+      - "Classe D - Vapor": classe_d
+  
+  - note: |
+      ---
+      #### 🔍 Inspeções
+  
+  - "Data da última inspeção": equipamentos[i].data_ultima_inspecao
+    datatype: date
+    required: False
+    max: ${ today() }
+  
+  - "Tipo da última inspeção": equipamentos[i].tipo_ultima_inspecao
+    required: False
+    input type: radio
+    choices:
+      - "Inspeção de segurança inicial": inicial
+      - "Inspeção de segurança periódica": periodica
+      - "Inspeção de segurança extraordinária": extraordinaria
+  
+  - "Próxima inspeção prevista": equipamentos[i].data_proxima_inspecao
+    datatype: date
+    required: False
+    min: ${ today() }
+  
+  - "Possui Prontuário atualizado?": equipamentos[i].tem_prontuario
+    datatype: yesnoradio
+    required: False
+    help: "Conforme item 13.6 da NR13"
+  
+  - "Possui Registro de Segurança atualizado?": equipamentos[i].tem_registro_seguranca
+    datatype: yesnoradio
+    required: False
+    help: "Conforme item 13.7 da NR13"
+  
+  - note: |
+      ---
+      #### 🛡️ Dispositivos de Segurança
+  
+  - "Possui válvula de segurança?": equipamentos[i].tem_valvula_seguranca
+    datatype: yesnoradio
+    required: False
+  
+  - "Última calibração da válvula": equipamentos[i].data_calibracao_valvula
+    datatype: date
+    required: False
+    show if: equipamentos[i].tem_valvula_seguranca
+  
+  - "Possui manômetro?": equipamentos[i].tem_manometro
+    datatype: yesnoradio
+    required: False
+  
+  - "Possui dispositivo de drenagem rápida?": equipamentos[i].tem_drenagem
+    datatype: yesnoradio
+    required: False
+  
+  - "Possui sistema de intertravamento?": equipamentos[i].tem_intertravamento
+    datatype: yesnoradio
+    required: False
+    help: "Sistema que impede operação em condições inseguras"
+---
+code: |
+  equipamentos[i].completo = True
+---
+# Bloco: Histórico de Inspeções
+id: nr13_historico_inspecoes
+section: inspecoes
+question: |
+  🔍 Histórico de Inspeções
+subquestion: |
+  Há registros de inspeções anteriores nos equipamentos?
+  
+  <div class="alert alert-info">
+    💡 Se possível, anexe os relatórios de inspeção anteriores.
+  </div>
+
+fields:
+  - "Empresa inspetora habitual": historico_inspecoes.empresa
+    required: False
+    hint: "Nome da empresa que realiza as inspeções"
+  
+  - "Responsável técnico da inspetora": historico_inspecoes.responsavel
+    required: False
+  
+  - "Frequência de inspeções": historico_inspecoes.frequencia
+    required: False
+    input type: radio
+    choices:
+      - "Anual": anual
+      - "Bienal": bienal
+      - "Conforme categoria": conforme_categoria
+  
+  - "Há pendências de inspeções anteriores?": historico_inspecoes.tem_pendencias
+    datatype: yesnoradio
+    required: False
+  
+  - "Descreva as pendências": historico_inspecoes.descricao_pendencias
+    input type: area
+    required: False
+    show if: historico_inspecoes.tem_pendencias
+    hint: "Reparos necessários, melhorias recomendadas, etc."
+  
+  - "Relatórios de inspeção (PDF)": historico_inspecoes.relatorios
+    datatype: files
+    required: False
+    help: "Faça upload dos relatórios anteriores, se disponível"
+
+continue button field: historico_inspecoes_preenchido
+---
+# Responsável Técnico NR13
+id: nr13_responsavel
+section: responsavel
+question: |
+  👨‍🔧 Responsável Técnico NR13
+subquestion: |
+  Informe os dados do profissional habilitado responsável pela operação e manutenção.
+  
+  <div class="alert alert-danger">
+    ⚠️ <strong>CRÍTICO:</strong> NR13 exige profissional habilitado com curso 
+    específico e registro no CREA/CRQ conforme categoria dos equipamentos.
+  </div>
+
+fields:
+  - "Nome completo": responsavel_nr13.nome
+    required: False
+  
+  - "Formação": responsavel_nr13.formacao
+    required: False
+    hint: "Ex: Engenheiro Mecânico, Técnico em Mecânica"
+  
+  - "Conselho": responsavel_nr13.conselho
+    required: False
+    input type: radio
+    choices:
+      - "CREA": crea
+      - "CRQ": crq
+  
+  - "Número de registro": responsavel_nr13.registro
+    required: False
+  
+  - "Possui curso NR13?": responsavel_nr13.tem_curso_nr13
+    datatype: yesnoradio
+    required: False
+    help: "Curso de Segurança na Operação de Caldeiras/Vasos"
+  
+  - "Carga horária do curso": responsavel_nr13.carga_horaria_curso
+    required: False
+    show if: responsavel_nr13.tem_curso_nr13
+    hint: "Ex: 40 horas (caldeireiro), 8 horas (operador)"
+  
+  - "Data de validade do curso": responsavel_nr13.validade_curso
+    datatype: date
+    required: False
+    show if: responsavel_nr13.tem_curso_nr13
+  
+  - "CPF": responsavel_nr13.cpf
+    required: False
+  
+  - "E-mail": responsavel_nr13.email
+    datatype: email
+    required: False
+  
+  - "Telefone": responsavel_nr13.telefone
+    required: False
+
+continue button field: responsavel_nr13_preenchido
+---
+# Funções de extração NR13
+code: |
+  def extrair_equipamentos():
+    """Extrai lista de equipamentos"""
+    lista = []
+    if defined('equipamentos'):
+      for eq in equipamentos:
+        dados = {
+          'tipo_equipamento': eq.tipo_equipamento if defined('eq.tipo_equipamento') else None,
+          'tag': eq.tag if defined('eq.tag') else None,
+          'numero_serie': eq.numero_serie if defined('eq.numero_serie') else None,
+          'fabricante': eq.fabricante if defined('eq.fabricante') else None,
+          'ano_fabricacao': eq.ano_fabricacao if defined('eq.ano_fabricacao') else None,
+          'capacidade': eq.capacidade if defined('eq.capacidade') else None,
+          'unidade_capacidade': eq.unidade_capacidade if defined('eq.unidade_capacidade') else None,
+          'pressao_trabalho': eq.pressao_trabalho if defined('eq.pressao_trabalho') else None,
+          'pmta': eq.pmta if defined('eq.pmta') else None,
+          'temperatura_trabalho': eq.temperatura_trabalho if defined('eq.temperatura_trabalho') else None,
+          'fluido': eq.fluido if defined('eq.fluido') else None,
+          'categoria_nr13': eq.categoria_nr13 if defined('eq.categoria_nr13') else None,
+          'classe_fluido': eq.classe_fluido if defined('eq.classe_fluido') else None,
+          'data_ultima_inspecao': eq.data_ultima_inspecao.isoformat() if defined('eq.data_ultima_inspecao') else None,
+          'tipo_ultima_inspecao': eq.tipo_ultima_inspecao if defined('eq.tipo_ultima_inspecao') else None,
+          'data_proxima_inspecao': eq.data_proxima_inspecao.isoformat() if defined('eq.data_proxima_inspecao') else None,
+          'tem_prontuario': eq.tem_prontuario if defined('eq.tem_prontuario') else None,
+          'tem_registro_seguranca': eq.tem_registro_seguranca if defined('eq.tem_registro_seguranca') else None,
+          'tem_valvula_seguranca': eq.tem_valvula_seguranca if defined('eq.tem_valvula_seguranca') else None,
+          'tem_manometro': eq.tem_manometro if defined('eq.tem_manometro') else None,
+          'tem_drenagem': eq.tem_drenagem if defined('eq.tem_drenagem') else None,
+          'tem_intertravamento': eq.tem_intertravamento if defined('eq.tem_intertravamento') else None
+        }
+        lista.append(dados)
+    return lista
+  
+  def extrair_historico_inspecoes():
+    """Extrai histórico de inspeções"""
+    return {
+      'empresa': historico_inspecoes.empresa if defined('historico_inspecoes.empresa') else None,
+      'responsavel': historico_inspecoes.responsavel if defined('historico_inspecoes.responsavel') else None,
+      'frequencia': historico_inspecoes.frequencia if defined('historico_inspecoes.frequencia') else None,
+      'tem_pendencias': historico_inspecoes.tem_pendencias if defined('historico_inspecoes.tem_pendencias') else None,
+      'descricao_pendencias': historico_inspecoes.descricao_pendencias if defined('historico_inspecoes.descricao_pendencias') else None
+    }
+  
+  def extrair_responsavel_nr13():
+    """Extrai dados do responsável NR13"""
+    return {
+      'nome': responsavel_nr13.nome if defined('responsavel_nr13.nome') else None,
+      'formacao': responsavel_nr13.formacao if defined('responsavel_nr13.formacao') else None,
+      'conselho': responsavel_nr13.conselho if defined('responsavel_nr13.conselho') else None,
+      'registro': responsavel_nr13.registro if defined('responsavel_nr13.registro') else None,
+      'tem_curso_nr13': responsavel_nr13.tem_curso_nr13 if defined('responsavel_nr13.tem_curso_nr13') else None,
+      'carga_horaria_curso': responsavel_nr13.carga_horaria_curso if defined('responsavel_nr13.carga_horaria_curso') else None,
+      'validade_curso': responsavel_nr13.validade_curso.isoformat() if defined('responsavel_nr13.validade_curso') else None,
+      'cpf': limpar_cnpj(responsavel_nr13.cpf) if defined('responsavel_nr13.cpf') else None,
+      'email': responsavel_nr13.email if defined('responsavel_nr13.email') else None,
+      'telefone': limpar_telefone(responsavel_nr13.telefone) if defined('responsavel_nr13.telefone') else None
+    }
+---
+# Validação, envio e conclusão (similar aos anteriores)
+id: validacao_nr13
+section: validacao
+event: tela_validacao_nr13
+question: |
+  ✅ Revisão NR13
+subquestion: |
+  <% 
+  payload = {
+    'tipo_entrevista': tipo_entrevista,
+    'protocolo': protocolo_entrevista,
+    'dados_cadastrais': extrair_dados_cadastrais(),
+    'contato': extrair_contato(),
+    'endereco': extrair_endereco(),
+    'equipamentos': extrair_equipamentos(),
+    'historico_inspecoes': extrair_historico_inspecoes(),
+    'responsavel_tecnico': extrair_responsavel_nr13()
+  }
+  
+  validador = ValidadorCompleto(payload)
+  resultado = validador.validar_tudo()
+  %>
+  
+  **Protocolo:** `${ protocolo_entrevista }`
+  **Completude:** ${ int(resultado['percentual_completude']) }%
+  
+  [Exibir resultados da validação similar aos anteriores]
+
+buttons:
+  % if resultado['pode_prosseguir']:
+  - "📤 Enviar": 
+      code: |
+        usuario_confirma_envio = True
+  % endif
+  - "← Voltar": restart
+---
+code: |
+  def enviar_dados_nr13():
+    payload = {
+      'tipo_entrevista': tipo_entrevista,
+      'protocolo': protocolo_entrevista,
+      'dados_cadastrais': extrair_dados_cadastrais(),
+      'contato': extrair_contato(),
+      'endereco': extrair_endereco(),
+      'equipamentos': extrair_equipamentos(),
+      'historico_inspecoes': extrair_historico_inspecoes(),
+      'responsavel_tecnico': extrair_responsavel_nr13()
+    }
+    return api_client.enviar_avaliacao(payload, validar_antes=True)
+---
+event: tela_conclusao_nr13
+question: |
+  ✅ Documentação NR13 Enviada!
+subquestion: |
+  Protocolo: `${ resultado_envio.protocolo if resultado_envio.sucesso else 'N/A' }`
+
+buttons:
+  - "🔄 Nova NR13": restart
+  - "🚪 Sair": exit

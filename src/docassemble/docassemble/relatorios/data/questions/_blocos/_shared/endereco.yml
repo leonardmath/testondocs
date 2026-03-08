@@ -1,0 +1,132 @@
+#  bloco-endereco.yml
+---
+# =============================================================================
+# �� BLOCO REUTILIZÁVEL: ENDEREÇO
+# =============================================================================
+# Coleta endereço completo com busca de CEP
+# Usado em: Todas as entrevistas
+# =============================================================================
+
+---
+# Busca de CEP (opcional)
+id: busca_cep
+question: |
+  📍 Busca de Endereço por CEP
+subquestion: |
+  Digite o CEP para preencher automaticamente o endereço.
+  
+  <div class="alert alert-info">
+    💡 A busca é opcional. Você pode preencher manualmente se preferir.
+  </div>
+
+fields:
+  - "Deseja buscar por CEP?": buscar_cep
+    datatype: yesnoradio
+    default: True
+    
+  - "CEP": endereco.cep_input
+    show if: buscar_cep
+    required: False
+    hint: "XXXXX-XXX"
+
+validation code: |
+  if buscar_cep and endereco.cep_input:
+    cep_limpo = limpar_cep(endereco.cep_input)
+    endereco.cep = cep_limpo
+    
+    # Busca CEP via ViaCEP
+    try:
+      import requests
+      response = requests.get(
+        f"https://viacep.com.br/ws/{cep_limpo}/json/",
+        timeout=5
+      )
+      if response.status_code == 200:
+        dados = response.json()
+        if 'erro' not in dados:
+          endereco.logradouro = dados.get('logradouro', '')
+          endereco.bairro = dados.get('bairro', '')
+          endereco.municipio = dados.get('localidade', '')
+          endereco.uf = dados.get('uf', '')
+          endereco.cep_busca_sucesso = True
+        else:
+          endereco.cep_busca_sucesso = False
+      else:
+        endereco.cep_busca_sucesso = False
+    except:
+      endereco.cep_busca_sucesso = False
+  else:
+    endereco.cep_busca_sucesso = False
+
+continue button field: busca_cep_realizada
+---
+# Endereço completo
+id: endereco
+question: |
+  % if defined('endereco.cep_busca_sucesso') and endereco.cep_busca_sucesso:
+  ✅ Endereço encontrado! Complete os dados
+  % else:
+  📍 Endereço Completo
+  % endif
+subquestion: |
+  % if defined('endereco.cep_busca_sucesso') and endereco.cep_busca_sucesso:
+  <div class="alert alert-success">
+    Endereço preenchido automaticamente. Adicione o número e complemento.
+  </div>
+  % endif
+  
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - "CEP": endereco.cep
+    required: False
+    default: ${ endereco.cep if defined('endereco.cep') else '' }
+    hint: "XXXXX-XXX"
+    
+  - "Logradouro": endereco.logradouro
+    required: False
+    default: ${ endereco.logradouro if defined('endereco.logradouro') else '' }
+    hint: "Rua, Avenida, Rodovia, etc."
+    
+  - "Número": endereco.numero
+    required: False
+    default: ${ endereco.numero if defined('endereco.numero') else '' }
+    
+  - "Complemento": endereco.complemento
+    required: False
+    hint: "Sala, Andar, Bloco, etc."
+    
+  - "Bairro": endereco.bairro
+    required: False
+    default: ${ endereco.bairro if defined('endereco.bairro') else '' }
+    
+  - "Município": endereco.municipio
+    required: False
+    default: ${ endereco.municipio if defined('endereco.municipio') else '' }
+    
+  - "UF": endereco.uf
+    required: False
+    input type: dropdown
+    code: lista_ufs
+    default: ${ endereco.uf if defined('endereco.uf') else 'PR' }
+
+under: |
+  [🔍 Buscar outro CEP](${ url_action('busca_cep') })
+
+continue button field: endereco_preenchido
+---
+code: |
+  def extrair_endereco():
+    """Extrai endereço para envio à API"""
+    return {
+      'cep': limpar_cep(endereco.cep) if defined('endereco.cep') else None,
+      'logradouro': endereco.logradouro if defined('endereco.logradouro') else None,
+      'numero': endereco.numero if defined('endereco.numero') else None,
+      'complemento': endereco.complemento if defined('endereco.complemento') else None,
+      'bairro': endereco.bairro if defined('endereco.bairro') else None,
+      'municipio': endereco.municipio if defined('endereco.municipio') else None,
+      'uf': endereco.uf if defined('endereco.uf') else None,
+      'cep_origem_busca': endereco.cep_busca_sucesso if defined('endereco.cep_busca_sucesso') else False
+    }

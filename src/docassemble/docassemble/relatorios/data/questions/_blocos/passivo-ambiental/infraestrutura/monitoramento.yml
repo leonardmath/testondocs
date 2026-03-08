@@ -1,0 +1,258 @@
+---
+# =============================================================================
+# BLOCO: Sistema de Monitoramento
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Sensores e sistemas de detecção de vazamentos
+# =============================================================================
+
+---
+objects:
+  - monitoramento: DAObject
+---
+question: |
+  📡 Sistema de Monitoramento e Sensores
+subquestion: |
+  Informações sobre sistemas de detecção de vazamentos e monitoramento 
+  intersticial dos tanques.
+  
+  > ⚠️ **Importante:** A Resolução CONAMA 273/2000 exige sistemas de 
+  > detecção de vazamentos em postos de combustíveis.
+
+section: infraestrutura
+fields:
+  - note: |
+      **🔍 Monitoramento Intersticial**
+  
+  - "Possui sistema de monitoramento intersticial?": monitoramento.tem_sistema
+    datatype: yesnoradio
+    help: |
+      Sistema que detecta vazamentos no espaço entre paredes duplas
+  
+  - note: |
+      **Detalhes do Sistema:**
+    show if: monitoramento.tem_sistema
+  
+  - "Marca/Fabricante": monitoramento.marca
+    show if: monitoramento.tem_sistema
+    hint: "Ex: Veeder-Root, OPW, etc"
+  
+  - "Modelo": monitoramento.modelo
+    show if: monitoramento.tem_sistema
+    required: False
+    hint: "Ex: TLS-350, TLS-450, etc"
+  
+  - "Tipo de sensor": monitoramento.tipo_sensor
+    show if: monitoramento.tem_sistema
+    required: False
+    choices:
+      - Hidrostático
+      - Eletrônico
+      - Pneumático
+      - Ultrassônico
+  
+  - "Ano de instalação": monitoramento.ano_instalacao
+    datatype: integer
+    show if: monitoramento.tem_sistema
+    required: False
+    min: 1990
+    max: 2025
+  
+  - note: |
+      ---
+      **⚠️ Sensores de Vazamento**
+  
+  - "Possui sensores de vazamento nos tanques?": monitoramento.sensores_vazamento
+    datatype: yesnoradio
+  
+  - "Quantidade de sensores": monitoramento.qtd_sensores
+    datatype: integer
+    show if: monitoramento.sensores_vazamento
+    min: 1
+    max: 50
+  
+  - note: |
+      ---
+      **📊 Monitoramento de Poços**
+  
+  - "Possui poços de monitoramento?": monitoramento.pocos_monitoramento
+    datatype: yesnoradio
+    help: |
+      Poços para monitoramento de água subterrânea
+  
+  - "Quantidade de poços": monitoramento.qtd_pocos
+    datatype: integer
+    show if: monitoramento.pocos_monitoramento
+    min: 1
+    max: 20
+  
+  - "Frequência de análise": monitoramento.frequencia_analise
+    show if: monitoramento.pocos_monitoramento
+    required: False
+    choices:
+      - Mensal
+      - Trimestral
+      - Semestral
+      - Anual
+      - Sob demanda
+  
+  - note: |
+      ---
+      **🔧 Manutenção**
+  
+  - "Possui contrato de manutenção do sistema?": monitoramento.contrato_manutencao
+    datatype: yesnoradio
+    show if: monitoramento.tem_sistema
+    required: False
+  
+  - "Empresa responsável": monitoramento.empresa_manutencao
+    show if: 
+      variable: monitoramento.contrato_manutencao
+      is: True
+    required: False
+  
+  - "Última calibração": monitoramento.data_calibracao
+    datatype: date
+    show if: monitoramento.tem_sistema
+    required: False
+    max: ${ today() }
+  
+  - note: |
+      ---
+      **📝 Observações**
+  
+  - "Observações adicionais": monitoramento.observacoes
+    datatype: area
+    required: False
+    rows: 4
+    hint: "Informações relevantes sobre o sistema de monitoramento"
+
+continue button field: monitoramento_preenchido
+---
+# =============================================================================
+# CÓDIGO: Validações e alertas
+# =============================================================================
+code: |
+  # Alertas baseados no sistema de monitoramento
+  alertas_monitoramento = []
+  
+  if not monitoramento.tem_sistema:
+    alertas_monitoramento.append({
+      "tipo": "critico",
+      "mensagem": "Ausência de sistema de monitoramento intersticial",
+      "recomendacao": "Instalação obrigatória conforme CONAMA 273/2000",
+      "prazo": "Imediato"
+    })
+  
+  if monitoramento.tem_sistema and hasattr(monitoramento, 'data_calibracao'):
+    from datetime import datetime, timedelta
+    
+    dias_desde_calibracao = (today() - monitoramento.data_calibracao).days
+    
+    if dias_desde_calibracao > 365:
+      alertas_monitoramento.append({
+        "tipo": "medio",
+        "mensagem": f"Sistema sem calibração há {dias_desde_calibracao} dias",
+        "recomendacao": "Realizar calibração anual do sistema",
+        "prazo": "30 dias"
+      })
+  
+  if not monitoramento.sensores_vazamento and total_tanques > 0:
+    alertas_monitoramento.append({
+      "tipo": "alto",
+      "mensagem": "Tanques sem sensores de detecção de vazamento",
+      "recomendacao": "Instalar sensores em todos os tanques ativos",
+      "prazo": "60 dias"
+    })
+  
+  if not monitoramento.pocos_monitoramento:
+    alertas_monitoramento.append({
+      "tipo": "medio",
+      "mensagem": "Ausência de poços de monitoramento de água subterrânea",
+      "recomendacao": "Avaliar instalação de no mínimo 3 poços (montante, jusante e área fonte)",
+      "prazo": "90 dias"
+    })
+  
+  # Score de conformidade do monitoramento (0-100)
+  score_monitoramento = 0
+  
+  if monitoramento.tem_sistema:
+    score_monitoramento += 40
+  if monitoramento.sensores_vazamento:
+    score_monitoramento += 30
+  if monitoramento.pocos_monitoramento:
+    score_monitoramento += 20
+  if monitoramento.contrato_manutencao if hasattr(monitoramento, 'contrato_manutencao') else False:
+    score_monitoramento += 10
+  
+  # Classificação
+  if score_monitoramento >= 80:
+    classificacao_monitoramento = "Excelente"
+  elif score_monitoramento >= 60:
+    classificacao_monitoramento = "Adequado"
+  elif score_monitoramento >= 40:
+    classificacao_monitoramento = "Regular"
+  else:
+    classificacao_monitoramento = "Inadequado"
+---
+# =============================================================================
+# RESUMO: Template para exibição
+# =============================================================================
+template: resumo_monitoramento
+content: |
+  ### 📡 Sistema de Monitoramento
+  
+  **Classificação:** ${ classificacao_monitoramento } (${ score_monitoramento }/100)
+  
+  ---
+  
+  % if monitoramento.tem_sistema:
+  **Sistema Intersticial:**
+  - Marca: ${ monitoramento.marca }
+  % if hasattr(monitoramento, 'modelo') and monitoramento.modelo:
+  - Modelo: ${ monitoramento.modelo }
+  % endif
+  % if hasattr(monitoramento, 'tipo_sensor') and monitoramento.tipo_sensor:
+  - Tipo: ${ monitoramento.tipo_sensor }
+  % endif
+  % if hasattr(monitoramento, 'ano_instalacao') and monitoramento.ano_instalacao:
+  - Instalado em: ${ monitoramento.ano_instalacao }
+  % endif
+  % else:
+  ⚠️ **Sem sistema de monitoramento intersticial**
+  % endif
+  
+  ---
+  
+  **Sensores de Vazamento:**
+  % if monitoramento.sensores_vazamento:
+  ✅ ${ monitoramento.qtd_sensores } sensor(es) instalado(s)
+  % else:
+  ❌ Não possui
+  % endif
+  
+  ---
+  
+  **Poços de Monitoramento:**
+  % if monitoramento.pocos_monitoramento:
+  ✅ ${ monitoramento.qtd_pocos } poço(s)
+  % if hasattr(monitoramento, 'frequencia_analise') and monitoramento.frequencia_analise:
+  - Análises: ${ monitoramento.frequencia_analise }
+  % endif
+  % else:
+  ❌ Não possui
+  % endif
+  
+  % if len(alertas_monitoramento) > 0:
+  
+  ---
+  
+  ⚠️ **Alertas (${ len(alertas_monitoramento) }):**
+  
+  % for alerta in alertas_monitoramento:
+  **[${ alerta['tipo'].upper() }]** ${ alerta['mensagem'] }  
+  _Recomendação: ${ alerta['recomendacao'] } (Prazo: ${ alerta['prazo'] })_
+  
+  % endfor
+  % endif

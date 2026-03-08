@@ -1,0 +1,21 @@
+.status-completo { color: #28a745; font-weight: bold; }
+.status-pendente { color: #ffc107; font-weight: bold; }
+.status-vazio { color: #dc3545; }
+
+.alert-critico {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.alert-importante {
+  background: #fff3cd;
+  border-color: #ffeeba;
+  color: #856404;
+}
+
+.alert-aviso {
+  background: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}

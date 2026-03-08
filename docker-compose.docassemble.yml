@@ -1,0 +1,36 @@
+# =============================================================================
+# Docassemble - Standalone
+# Acesso: http://localhost
+# Admin:  admin@admin.com / password
+# =============================================================================
+
+services:
+  docassemble:
+    image: jhpyle/docassemble:latest
+    container_name: stack-docassemble
+    restart: unless-stopped
+    ports:
+      - "80:80"       # Interface web principal
+      - "443:443"     # HTTPS (opcional)
+    environment:
+      DAPYTHONVERSION: "3"
+      DAUSECLOUD: "false"
+      TZ: America/Sao_Paulo
+    volumes:
+      # Persiste dados, entrevistas, pacotes e uploads
+      - docassemble_data:/usr/share/docassemble/files
+      - docassemble_log:/usr/share/docassemble/log
+      # Monta seu pacote local diretamente
+      - ./src/docassemble:/usr/share/docassemble/packages/docassemble:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s  # Docassemble demora para iniciar
+
+volumes:
+  docassemble_data:
+    driver: local
+  docassemble_log:
+    driver: local

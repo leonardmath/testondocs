@@ -1,0 +1,92 @@
+# docassemble/germinare/data/questions/_config/listas-dados.yml
+---
+# =============================================================================
+# LISTAS DE DADOS - Centralizadas e reutilizáveis
+# =============================================================================
+
+variable name: lista_ufs
+data:
+  - AC
+  - AL
+  - AP
+  - AM
+  - BA
+  - CE
+  - DF
+  - ES
+  - GO
+  - MA
+  - MT
+  - MS
+  - MG
+  - PA
+  - PB
+  - PR
+  - PE
+  - PI
+  - RJ
+  - RN
+  - RS
+  - RO
+  - RR
+  - SC
+  - SP
+  - SE
+  - TO
+---
+variable name: lista_bandeiras
+data:
+  - BR Distribuidora
+  - Ipiranga
+  - Shell
+  - Raízen
+  - Vibra
+  - Ale
+  - Petrobras
+  - Bandeira Branca
+  - Outra
+---
+variable name: lista_combustiveis
+data:
+  - Gasolina Comum
+  - Gasolina Aditivada
+  - Gasolina Podium
+  - Etanol
+  - Diesel S10
+  - Diesel S500
+  - GNV
+  - Arla 32
+---
+variable name: lista_tipos_tanque
+data:
+  - Subterrâneo - Parede Simples
+  - Subterrâneo - Parede Dupla
+  - Subterrâneo - Jaquetado
+  - Aéreo
+  - Ecotank
+---
+variable name: lista_tipos_relatorio
+data:
+  - label: "Passivo Ambiental"
+    value: "passivo_ambiental"
+  - label: "PGRS - Plano de Gerenciamento de Resíduos Sólidos"
+    value: "pgrs"
+  - label: "NR13 - Caldeiras e Vasos de Pressão"
+    value: "nr13"
+  - label: "Licenciamento Ambiental"
+    value: "licenciamento"
+  - label: "Investigação Confirmatória"
+    value: "investigacao"
+  - label: "Plano de Intervenção"
+    value: "intervencao"
+  - label: "Monitoramento Ambiental"
+    value: "monitoramento"
+---
+variable name: lista_prioridades
+data:
+  - label: "Normal (15 dias úteis)"
+    value: "normal"
+  - label: "Urgente (7 dias úteis)"
+    value: "urgente"
+  - label: "Express (3 dias úteis)"
+    value: "express"

@@ -1,0 +1,291 @@
+---
+# =============================================================================
+# ENTREVISTA: PASSIVO AMBIENTAL - VERSÃO COMPLETA E DETALHADA
+# =============================================================================
+metadata:
+  title: "Passivo Ambiental - Posto de Combustível"
+  short title: "Passivo Ambiental"
+  description: "Avaliação completa de passivo ambiental conforme IN-IAT 39/2025"
+  version: "4.0.0"
+---
+# ---------------------------------------------------------------------------
+# Importação de módulos Python
+# ---------------------------------------------------------------------------
+modules:
+  - docassemble.relatorios.utils
+  - docassemble.relatorios.validators
+  - docassemble.relatorios.sanitizers
+---
+# ---------------------------------------------------------------------------
+# Objetos necessários
+# ---------------------------------------------------------------------------
+objects:
+  - dados_cadastrais: DAObject
+  - endereco: DAObject
+  - contato: DAObject
+  - localizacao: DAObject
+  - historico: DAObject
+  - entorno: DAObject
+  - empreendimento: DAObject
+  - bombas: DAObject
+---
+# ---------------------------------------------------------------------------
+# Includes - ORDEM IMPORTANTE: Config ANTES dos blocos
+# ---------------------------------------------------------------------------
+include:
+  - _config/listas-dados.yml
+  - _config/config-base.yml
+  - _blocos/bloco-dados-cadastrais.yml
+  - _blocos/bloco-endereco.yml
+  - _blocos/bloco-contato.yml
+  - _blocos/bloco-localizacao.yml
+  - _blocos/bloco-historico.yml
+  - _blocos/bloco-entorno.yml
+  - _blocos/bloco-empreendimento.yml
+  - _blocos/bloco-tanques-detalhado.yml
+  - _blocos/bloco-bombas.yml
+---
+# ---------------------------------------------------------------------------
+# Seções de navegação
+# ---------------------------------------------------------------------------
+sections:
+  - intro: "🏠 Início"
+  - cadastro: "🏢 Cadastro"
+  - endereco: "📍 Endereço"
+  - contato: "📞 Contato"
+  - localizacao: "🗺️ Localização"
+  - entorno: "🏘️ Entorno"
+  - infraestrutura: "⛽ Infraestrutura"
+  - validacao: "✅ Revisão"
+---
+# ---------------------------------------------------------------------------
+# Variáveis iniciais
+# ---------------------------------------------------------------------------
+code: |
+  from datetime import datetime
+  protocolo_entrevista = gerar_protocolo("PA")
+  data_inicio_entrevista = datetime.now()
+  tipo_entrevista = "passivo_ambiental"
+---
+# ---------------------------------------------------------------------------
+# FLUXO PRINCIPAL - COMPLETO E DETALHADO
+# ---------------------------------------------------------------------------
+mandatory: True
+code: |
+  # 1. Introdução
+  viu_introducao
+  
+  # 2. Busca e dados cadastrais (com CNPJ automático)
+  busca_cnpj_realizada
+  dados_cadastrais_preenchidos
+  
+  # 3. Endereço (com CEP automático)
+  busca_cep_realizada
+  endereco_preenchido
+  
+  # 4. Contato
+  contato_preenchido
+  
+  # 5. Localização geográfica
+  localizacao_preenchida
+  
+  # 6. Histórico da área
+  historico_preenchido
+  
+  # 7. Caracterização do entorno
+  entorno_preenchido
+  
+  # 8. Caracterização do empreendimento
+  empreendimento_preenchido
+  
+  # 9. Sistema de armazenamento (tanques)
+  tanques_quantidade_informada
+  tanques.gather()
+  
+  # 10. Bombas e linhas
+  bombas_preenchido
+  
+  # 11. Finalização
+  tela_final_passivo
+---
+# ---------------------------------------------------------------------------
+# TELA: INTRODUÇÃO
+# ---------------------------------------------------------------------------
+question: |
+  Bem-vindo ao Sistema de Passivo Ambiental
+subquestion: |
+  <div style="text-align: center; margin: 2rem 0;">
+    <h3>⛽ Postos de Combustíveis</h3>
+  </div>
+
+  Este formulário coleta informações completas para elaboração do
+  **Laudo de Passivo Ambiental** conforme IN-IAT 39/2025.
+
+  ---
+
+  ### 🎯 Como Funciona
+
+  1. **Busca Automática**: Digite CNPJ/CEP e puxamos dados automaticamente
+  2. **10 Seções Detalhadas**: 
+     - Cadastro e localização
+     - Histórico da área  
+     - Caracterização do entorno
+     - Infraestrutura completa
+     - Tanques e bombas
+  3. **Navegação Livre**: Use o menu lateral
+  4. **Salvamento Automático**
+
+  ---
+
+  **⏱️ Tempo estimado:** 30–45 minutos  
+  **📋 Protocolo:** `${ protocolo_entrevista }`
+  
+  <div class="alert alert-warning">
+    ⚠️ **Importante:** Tenha em mãos documentos do posto, histórico de reformas e dados dos tanques.
+  </div>
+  
+section: intro
+field: viu_introducao
+buttons:
+  - "🚀 Começar": continue
+---
+# ---------------------------------------------------------------------------
+# TELA FINAL - RESUMO COMPLETO
+# ---------------------------------------------------------------------------
+event: tela_final_passivo
+question: |
+  ✅ Avaliação de Passivo Ambiental Completa!
+subquestion: |
+  <div style="text-align: center; margin: 2rem 0;">
+    <h1>🎉</h1>
+  </div>
+
+  **Protocolo:** `${ protocolo_entrevista }`
+
+  ---
+
+  ### 📄 Resumo Completo dos Dados Coletados
+
+  #### 🏢 Empresa
+  
+  % if defined('dados_cadastrais.razao_social'):
+  - **Razão Social:** ${ dados_cadastrais.razao_social }
+  % endif
+  
+  % if defined('dados_cadastrais.cnpj'):
+  - **CNPJ:** ${ formatar_cnpj(dados_cadastrais.cnpj) }
+  % endif
+  
+  % if defined('dados_cadastrais.nome_fantasia'):
+  - **Nome Fantasia:** ${ dados_cadastrais.nome_fantasia }
+  % endif
+  
+  ---
+  
+  #### 📍 Localização
+  
+  % if defined('endereco.logradouro'):
+  - **Endereço:** ${ endereco.logradouro }, ${ endereco.numero if defined('endereco.numero') else 'S/N' }
+  % endif
+  
+  % if defined('endereco.municipio'):
+  - **Município/UF:** ${ endereco.municipio }/${ endereco.uf if defined('endereco.uf') else '' }
+  % endif
+  
+  % if defined('localizacao.latitude') and defined('localizacao.longitude'):
+  - **Coordenadas:** ${ localizacao.latitude }, ${ localizacao.longitude }
+  % endif
+  
+  % if defined('localizacao.area_m2'):
+  - **Área:** ${ localizacao.area_m2 } m²
+  % endif
+  
+  ---
+  
+  #### 📜 Histórico
+  
+  % if defined('historico.ano_inicio'):
+  - **Ano de início:** ${ historico.ano_inicio } (${ datetime.now().year - historico.ano_inicio } anos de operação)
+  % endif
+  
+  % if defined('historico.bandeira_atual'):
+  - **Bandeira:** ${ historico.bandeira_atual }
+  % endif
+  
+  % if defined('historico.teve_autuacoes'):
+  - **Autuações:** ${ "Sim" if historico.teve_autuacoes else "Não" }
+  % endif
+  
+  ---
+  
+  #### 🏘️ Entorno
+  
+  % if defined('entorno.ocupacao_predominante'):
+  - **Ocupação:** ${ ", ".join(entorno.ocupacao_predominante.true_values()) }
+  % endif
+  
+  % if defined('entorno.tem_pocos_200m'):
+  - **Poços (200m):** ${ entorno.qtd_pocos_200m if defined('entorno.qtd_pocos_200m') else 0 }
+  % endif
+  
+  % if defined('entorno.tem_escolas'):
+  - **Escolas próximas:** ${ "Sim (" + str(entorno.qtd_escolas) + ")" if entorno.tem_escolas else "Não" }
+  % endif
+  
+  ---
+  
+  #### ⛽ Infraestrutura
+  
+  % if defined('empreendimento.combustiveis'):
+  - **Combustíveis:** ${ ", ".join(empreendimento.combustiveis.true_values()) }
+  % endif
+  
+  % if defined('tanques'):
+  - **Tanques:** ${ tanques.number() } tanque(s)
+  % endif
+  
+  % if defined('bombas.qtd_bombas'):
+  - **Bombas:** ${ bombas.qtd_bombas } unidade(s)
+  % endif
+  
+  % if defined('bombas.qtd_bicos'):
+  - **Bicos:** ${ bombas.qtd_bicos } unidade(s)
+  % endif
+  
+  % if defined('empreendimento.tem_csao'):
+  - **CSAO:** ${ "Sim" if empreendimento.tem_csao else "Não" }
+  % endif
+  
+  ---
+  
+  #### 📞 Contato
+  
+  % if defined('contato.email'):
+  - **Email:** ${ contato.email }
+  % endif
+  
+  % if defined('contato.telefone'):
+  - **Telefone:** ${ formatar_telefone(contato.telefone) }
+  % endif
+  
+  % if defined('contato.responsavel_nome'):
+  - **Responsável:** ${ contato.responsavel_nome }
+  % endif
+  
+  ---
+  
+  **🕐 Data/Hora de Preenchimento:** ${ data_inicio_entrevista.strftime('%d/%m/%Y às %H:%M') }
+  
+  <div class="alert alert-success" style="margin-top: 2rem;">
+    ✅ **Próximos Passos:**
+    
+    1. Os dados serão processados e validados
+    2. Será gerado o relatório técnico de passivo ambiental
+    3. Você receberá o relatório final no email informado
+  </div>
+
+buttons:
+  - "📥 Baixar Resumo (PDF)": exit
+    url: /download/${ protocolo_entrevista }
+  - "🔄 Nova Avaliação": restart
+  - "🚪 Sair": exit

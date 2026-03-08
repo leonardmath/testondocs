@@ -1,0 +1,196 @@
+---
+# =============================================================================
+# BLOCO: Entorno - Versão Simplificada
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 2.0.0
+# Descrição: Análise do entorno do empreendimento
+# =============================================================================
+
+---
+objects:
+  - entorno: DAObject
+---
+question: |
+  🏘️ Entorno do Empreendimento
+subquestion: |
+  Informações sobre o entorno no raio de **200 metros** do empreendimento.
+  
+  Estas informações são importantes para análise de risco ambiental.
+
+section: entorno_sec
+fields:
+  - note: |
+      **💧 Poços Tubulares**
+  
+  - "Foram identificados poços no raio de 200m?": entorno.tem_pocos_200m
+    datatype: yesnoradio
+    default: False
+  
+  - "Quantidade de poços": entorno.qtd_pocos_200m
+    datatype: integer
+    show if: entorno.tem_pocos_200m
+    min: 1
+    max: 50
+  
+  - note: |
+      ---
+      **🏠 Residências**
+  
+  - "Há residências no raio de 100m?": entorno.tem_residencias_100m
+    datatype: yesnoradio
+    default: False
+  
+  - "Quantidade aproximada": entorno.qtd_residencias_100m
+    datatype: integer
+    show if: entorno.tem_residencias_100m
+    min: 1
+    max: 200
+  
+  - note: |
+      ---
+      **🌊 Corpos Hídricos**
+  
+  - "Há corpos d'água próximos (rios, córregos, lagos)?": entorno.tem_corpos_hidricos
+    datatype: yesnoradio
+    default: False
+  
+  - "Distância aproximada (metros)": entorno.distancia_corpo_hidrico
+    datatype: number
+    show if: entorno.tem_corpos_hidricos
+    min: 0
+    max: 5000
+  
+  - "Nome do corpo hídrico": entorno.nome_corpo_hidrico
+    show if: entorno.tem_corpos_hidricos
+    required: False
+  
+  - note: |
+      ---
+      **🏥 Edificações Sensíveis**
+  
+  - "Há hospitais ou clínicas no raio de 200m?": entorno.tem_hospitais
+    datatype: yesnoradio
+    default: False
+  
+  - "Há escolas no raio de 200m?": entorno.tem_escolas
+    datatype: yesnoradio
+    default: False
+  
+  - "Há creches no raio de 200m?": entorno.tem_creches
+    datatype: yesnoradio
+    default: False
+
+continue button field: entorno_preenchido
+---
+# =============================================================================
+# CÓDIGO: Processar dados do entorno
+# =============================================================================
+code: |
+  # Classificação de sensibilidade do entorno
+  score_sensibilidade = 0
+  
+  if entorno.tem_pocos_200m:
+    score_sensibilidade += 30
+  
+  if entorno.tem_residencias_100m:
+    score_sensibilidade += 20
+  
+  if entorno.tem_corpos_hidricos:
+    if entorno.distancia_corpo_hidrico < 100:
+      score_sensibilidade += 30
+    elif entorno.distancia_corpo_hidrico < 300:
+      score_sensibilidade += 20
+    else:
+      score_sensibilidade += 10
+  
+  if entorno.tem_hospitais:
+    score_sensibilidade += 15
+  
+  if entorno.tem_escolas or entorno.tem_creches:
+    score_sensibilidade += 15
+  
+  # Classificação
+  if score_sensibilidade >= 70:
+    classificacao_entorno = "MUITO SENSÍVEL"
+  elif score_sensibilidade >= 40:
+    classificacao_entorno = "SENSÍVEL"
+  elif score_sensibilidade >= 20:
+    classificacao_entorno = "MODERADO"
+  else:
+    classificacao_entorno = "POUCO SENSÍVEL"
+  
+  # Payload para API
+  entorno_payload = {
+    "pocos": {
+      "existe": entorno.tem_pocos_200m,
+      "quantidade_200m": entorno.qtd_pocos_200m if entorno.tem_pocos_200m else 0
+    },
+    "residencias": {
+      "existe_100m": entorno.tem_residencias_100m,
+      "quantidade_100m": entorno.qtd_residencias_100m if entorno.tem_residencias_100m else 0
+    },
+    "corpos_hidricos": {
+      "existe": entorno.tem_corpos_hidricos,
+      "distancia_m": entorno.distancia_corpo_hidrico if entorno.tem_corpos_hidricos else None,
+      "nome": entorno.nome_corpo_hidrico if hasattr(entorno, 'nome_corpo_hidrico') else None
+    },
+    "edificacoes_sensiveis": {
+      "hospitais": entorno.tem_hospitais,
+      "escolas": entorno.tem_escolas,
+      "creches": entorno.tem_creches
+    },
+    "classificacao_sensibilidade": classificacao_entorno,
+    "score_sensibilidade": score_sensibilidade
+  }
+---
+# =============================================================================
+# RESUMO: Template para exibição
+# =============================================================================
+template: resumo_entorno
+content: |
+  ### 🏘️ Entorno do Empreendimento
+  
+  **Classificação:** ${ classificacao_entorno } (${ score_sensibilidade }/100)
+  
+  ---
+  
+  **💧 Poços Tubulares:**
+  % if entorno.tem_pocos_200m:
+  ✅ ${ entorno.qtd_pocos_200m } poço(s) identificado(s) no raio de 200m
+  % else:
+  ❌ Não identificados
+  % endif
+  
+  **🏠 Residências:**
+  % if entorno.tem_residencias_100m:
+  ✅ Aproximadamente ${ entorno.qtd_residencias_100m } no raio de 100m
+  % else:
+  ❌ Não identificadas no raio de 100m
+  % endif
+  
+  **🌊 Corpos Hídricos:**
+  % if entorno.tem_corpos_hidricos:
+  ✅ Identificado a ${ entorno.distancia_corpo_hidrico } metros
+  % if hasattr(entorno, 'nome_corpo_hidrico') and entorno.nome_corpo_hidrico:
+  - Nome: ${ entorno.nome_corpo_hidrico }
+  % endif
+  % else:
+  ❌ Não identificados
+  % endif
+  
+  **🏥 Edificações Sensíveis:**
+  - Hospitais/Clínicas: ${ "✅ Sim" if entorno.tem_hospitais else "❌ Não" }
+  - Escolas: ${ "✅ Sim" if entorno.tem_escolas else "❌ Não" }
+  - Creches: ${ "✅ Sim" if entorno.tem_creches else "❌ Não" }
+  
+  ---
+  
+  % if classificacao_entorno in ["MUITO SENSÍVEL", "SENSÍVEL"]:
+  ⚠️ **Atenção:** Entorno com alta sensibilidade ambiental
+  
+  **Recomendações:**
+  - Monitoramento intensivo de água subterrânea
+  - Plano de ação emergencial específico
+  - Comunicação com órgãos ambientais
+  % endif

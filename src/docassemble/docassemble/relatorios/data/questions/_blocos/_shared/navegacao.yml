@@ -1,0 +1,15 @@
+---
+# =============================================================================
+# NAVEGAÇÃO: Progress Bar e Review Screen
+# =============================================================================
+# Adicionar ao passivo-ambiental.yml
+# =============================================================================
+
+---
+# Progress bar visual
+features:
+  navigation: True
+  progress bar: True
+  progress bar method: percentage
+  back button: True
+---

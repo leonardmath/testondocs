@@ -1,0 +1,486 @@
+---
+# =============================================================================
+# ENTREVISTA: PGRS - Plano de Gerenciamento de Resíduos Sólidos
+# =============================================================================
+# Reutiliza blocos: cadastrais, contato, endereço, localização
+# Adiciona blocos específicos de resíduos
+# =============================================================================
+
+include:
+  - _config/config-base.yml
+  - _config/listas-dados.yml
+  - blocks/_shared/dados-cadastrais.yml
+  - blocks/_shared/contato.yml
+  - blocks/_shared/endereco.yml
+  - blocks/_shared/localizacao.yml
+---
+metadata:
+  title: "PGRS - Plano de Gerenciamento de Resíduos Sólidos"
+  short title: "PGRS"
+  description: "Elaboração de PGRS para estabelecimentos comerciais e industriais"
+  version: "1.0.0"
+---
+sections:
+  - intro: "🏠 Início"
+  - cadastro: "🏢 Cadastro"
+  - atividades: "🏭 Atividades"
+  - residuos: "♻️ Resíduos"
+  - destinacao: "🚛 Destinação"
+  - responsavel: "👨‍🔬 Responsável Técnico"
+  - validacao: "✅ Revisão"
+---
+code: |
+  protocolo_entrevista = gerar_protocolo("PG")
+  tipo_entrevista = "pgrs"
+  data_inicio_entrevista = current_datetime()
+---
+# Fluxo principal
+mandatory: True
+code: |
+  if not defined('usuario_viu_intro'):
+    tela_intro_pgrs
+    usuario_viu_intro = True
+  
+  if revisao_solicitada:
+    tela_validacao_pgrs
+    if usuario_confirma_envio:
+      resultado_envio = enviar_dados_pgrs()
+      tela_conclusao_pgrs
+---
+# Introdução específica do PGRS
+id: intro_pgrs
+section: intro
+event: tela_intro_pgrs
+question: |
+  Bem-vindo ao Sistema de PGRS
+subquestion: |
+  <div style="text-align: center; margin: 2rem 0;">
+    <h3>♻️ Plano de Gerenciamento de Resíduos Sólidos</h3>
+  </div>
+  
+  Este formulário coleta informações para elaboração do **PGRS** conforme Lei 12.305/2010.
+  
+  ---
+  
+  ### 📋 Informações Necessárias
+  
+  - Dados cadastrais da empresa
+  - Atividades desenvolvidas
+  - Tipos de resíduos gerados
+  - Quantidades estimadas
+  - Destinação atual dos resíduos
+  - Responsável técnico
+  
+  ---
+  
+  **⏱️ Tempo estimado: 20-30 minutos**
+  
+  **📋 Protocolo:** `${ protocolo_entrevista }`
+
+buttons:
+  - "🚀 Começar": continue
+---
+# Bloco específico: Atividades
+id: pgrs_atividades
+section: atividades
+question: |
+  🏭 Atividades Desenvolvidas
+subquestion: |
+  Selecione todas as atividades desenvolvidas no estabelecimento.
+  
+  <small class="text-muted">
+  Este campo ajuda a caracterizar os resíduos gerados.
+  </small>
+
+fields:
+  - "Atividades": atividades.lista
+    datatype: checkboxes
+    required: False
+    choices:
+      - "Comércio de combustíveis": combustiveis
+      - "Troca de óleo": troca_oleo
+      - "Lavagem de veículos": lavagem
+      - "Loja de conveniência": conveniencia
+      - "Borracharia": borracharia
+      - "Oficina mecânica": oficina
+      - "Venda de lubrificantes": lubrificantes
+      - "Calibragem de pneus": calibragem
+      - "Serviços administrativos": administrativo
+      - "Outra": outra
+    
+  - "Especifique outras atividades": atividades.outras_descricao
+    input type: area
+    required: False
+    show if:
+      variable: atividades.lista
+      contains: "outra"
+  
+  - "Número de funcionários": atividades.num_funcionarios
+    datatype: integer
+    required: False
+    min: 0
+    hint: "Total de colaboradores"
+  
+  - "Horário de funcionamento": atividades.horario
+    required: False
+    hint: "Ex: Segunda a Sábado, 6h às 22h"
+
+continue button field: atividades_preenchidas
+---
+# Bloco específico: Resíduos Gerados
+objects:
+  - residuos: DAList.using(object_type=DAObject, complete_attribute='completo')
+---
+id: pgrs_residuos
+section: residuos
+question: |
+  ♻️ Resíduos Gerados
+subquestion: |
+  Adicione todos os tipos de resíduos gerados no estabelecimento.
+  
+  <div class="alert alert-info">
+    💡 <strong>Classifique conforme NBR 10004:</strong>
+    <ul>
+      <li><strong>Classe I - Perigosos:</strong> Óleo usado, filtros, estopas contaminadas</li>
+      <li><strong>Classe II A - Não Inertes:</strong> Papelão, plástico, orgânicos</li>
+      <li><strong>Classe II B - Inertes:</strong> Entulho, vidro</li>
+    </ul>
+  </div>
+  
+  % if len(residuos) > 0:
+  **Total de resíduos cadastrados:** ${ len(residuos) }
+  % endif
+  
+  ${ residuos.table }
+  
+  ${ residuos.add_action("➕ Adicionar Resíduo") }
+
+continue button field: residuos_preenchidos
+---
+table: residuos.table
+rows: residuos
+columns:
+  - Nº: row_index + 1
+  - Tipo: row_item.tipo if defined('row_item.tipo') else '—'
+  - Classe: row_item.classe if defined('row_item.classe') else '—'
+  - Qtd. Mensal: |
+      str(row_item.quantidade_mensal) + ' ' + row_item.unidade if defined('row_item.quantidade_mensal') else '—'
+  - Destinação: row_item.destinacao_atual if defined('row_item.destinacao_atual') else '—'
+edit:
+  - tipo
+delete buttons: True
+confirm: True
+---
+# Dados de cada resíduo
+id: residuo_individual
+question: |
+  ♻️ Resíduo ${ ordinal(i) }
+subquestion: |
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - "Tipo de resíduo": residuos[i].tipo
+    required: False
+    hint: "Ex: Óleo lubrificante usado, Filtro de óleo, Papelão"
+    
+  - "Classe NBR 10004": residuos[i].classe
+    required: False
+    input type: radio
+    choices:
+      - "Classe I - Perigoso": classe_i
+      - "Classe II A - Não Inerte": classe_ii_a
+      - "Classe II B - Inerte": classe_ii_b
+    
+  - "Estado físico": residuos[i].estado_fisico
+    required: False
+    input type: radio
+    choices:
+      - "Sólido": solido
+      - "Líquido": liquido
+      - "Pastoso": pastoso
+      - "Gasoso": gasoso
+  
+  - "Quantidade mensal gerada": residuos[i].quantidade_mensal
+    datatype: number
+    required: False
+    min: 0
+    
+  - "Unidade": residuos[i].unidade
+    required: False
+    input type: radio
+    choices:
+      - "kg": kg
+      - "litros": litros
+      - "m³": m3
+      - "unidades": unidades
+  
+  - note: |
+      ---
+      #### 📦 Acondicionamento
+  
+  - "Como é acondicionado?": residuos[i].acondicionamento
+    required: False
+    hint: "Ex: Tambor 200L, Caçamba, Saco plástico"
+    
+  - "Local de armazenamento temporário": residuos[i].local_armazenamento
+    required: False
+    hint: "Ex: Abrigo de resíduos, Área externa coberta"
+  
+  - note: |
+      ---
+      #### 🚛 Destinação Atual
+  
+  - "Destinação atual": residuos[i].destinacao_atual
+    required: False
+    input type: radio
+    choices:
+      - "Coleta municipal": coleta_municipal
+      - "Empresa especializada": empresa_especializada
+      - "Reciclagem": reciclagem
+      - "Aterro sanitário": aterro
+      - "Coprocessamento": coprocessamento
+      - "Rerrefino": rerrefino
+      - "Outra": outra
+  
+  - "Nome da empresa destinadora": residuos[i].empresa_destinadora
+    required: False
+    show if:
+      variable: residuos[i].destinacao_atual
+      is: empresa_especializada
+    
+  - "Frequência de coleta": residuos[i].frequencia_coleta
+    required: False
+    hint: "Ex: Semanal, Quinzenal, Mensal"
+---
+code: |
+  residuos[i].completo = True
+---
+# Bloco: Responsável Técnico
+id: pgrs_responsavel_tecnico
+section: responsavel
+question: |
+  👨‍🔬 Responsável Técnico pelo PGRS
+subquestion: |
+  Informe os dados do responsável técnico pela elaboração e implementação do PGRS.
+  
+  <div class="alert alert-warning">
+    ⚠️ <strong>Importante:</strong> O responsável técnico deve possuir formação 
+    compatível (Engenheiro Ambiental, Químico, Biólogo, etc.) e registro no 
+    conselho de classe.
+  </div>
+  
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - "Nome do responsável técnico": responsavel_tecnico.nome
+    required: False
+    
+  - "Formação": responsavel_tecnico.formacao
+    required: False
+    hint: "Ex: Engenheiro Ambiental, Químico"
+    
+  - "Conselho de classe": responsavel_tecnico.conselho
+    required: False
+    input type: radio
+    choices:
+      - "CREA": crea
+      - "CRQ": crq
+      - "CRBio": crbio
+      - "Outro": outro
+    
+  - "Número de registro": responsavel_tecnico.registro
+    required: False
+    hint: "Ex: CREA-PR 12345/D"
+    
+  - "CPF": responsavel_tecnico.cpf
+    required: False
+    
+  - "E-mail": responsavel_tecnico.email
+    datatype: email
+    required: False
+    
+  - "Telefone": responsavel_tecnico.telefone
+    required: False
+    
+  - "É funcionário da empresa?": responsavel_tecnico.vinculo
+    datatype: yesnoradio
+    required: False
+    
+  - "Empresa de consultoria": responsavel_tecnico.empresa_consultoria
+    required: False
+    show if:
+      variable: responsavel_tecnico.vinculo
+      is: False
+
+continue button field: responsavel_tecnico_preenchido
+---
+# Validação PGRS
+id: validacao_pgrs
+section: validacao
+event: tela_validacao_pgrs
+question: |
+  ✅ Revisão do PGRS
+subquestion: |
+  <% 
+  payload = {
+    'tipo_entrevista': tipo_entrevista,
+    'protocolo': protocolo_entrevista,
+    'versao_entrevista': '1.0.0',
+    'data_inicio': data_inicio_entrevista.isoformat() if defined('data_inicio_entrevista') else None,
+    'dados_cadastrais': extrair_dados_cadastrais(),
+    'contato': extrair_contato(),
+    'endereco': extrair_endereco(),
+    'localizacao': extrair_localizacao(),
+    'atividades': extrair_atividades(),
+    'residuos': extrair_residuos(),
+    'responsavel_tecnico': extrair_responsavel_tecnico()
+  }
+  
+  validador = ValidadorCompleto(payload)
+  resultado = validador.validar_tudo()
+  %>
+  
+  **Protocolo:** `${ protocolo_entrevista }`
+  
+  **Completude:** ${ int(resultado['percentual_completude']) }%
+  
+  ---
+  
+  % if len(resultado['criticos']) > 0:
+  <div class="alert alert-critico">
+    <strong>❌ Problemas Críticos:</strong>
+    <ul>
+    % for prob in resultado['criticos']:
+      <li><strong>${ prob['campo'] }</strong>: ${ prob['mensagem'] }</li>
+    % endfor
+    </ul>
+  </div>
+  % endif
+  
+  % if len(resultado['importantes']) > 0:
+  <div class="alert alert-importante">
+    <strong>⚠️ Atenção:</strong>
+    <ul>
+    % for prob in resultado['importantes']:
+      <li><strong>${ prob['campo'] }</strong>: ${ prob['mensagem'] }</li>
+    % endfor
+    </ul>
+  </div>
+  % endif
+  
+  % if resultado['pode_prosseguir']:
+  <div class="alert alert-success">
+    ✅ Pronto para enviar!
+  </div>
+  % endif
+
+buttons:
+  % if resultado['pode_prosseguir']:
+  - "📤 Enviar PGRS": 
+      code: |
+        usuario_confirma_envio = True
+        revisao_solicitada = False
+  % endif
+  - "← Voltar": 
+      code: |
+        revisao_solicitada = False
+      action: restart
+---
+# Funções de extração específicas do PGRS
+code: |
+  def extrair_atividades():
+    """Extrai dados das atividades"""
+    return {
+      'lista': atividades.lista.true_values() if defined('atividades.lista') else [],
+      'outras_descricao': atividades.outras_descricao if defined('atividades.outras_descricao') else None,
+      'num_funcionarios': atividades.num_funcionarios if defined('atividades.num_funcionarios') else None,
+      'horario': atividades.horario if defined('atividades.horario') else None
+    }
+  
+  def extrair_residuos():
+    """Extrai lista de resíduos"""
+    lista_residuos = []
+    if defined('residuos'):
+      for residuo in residuos:
+        dados = {
+          'tipo': residuo.tipo if defined('residuo.tipo') else None,
+          'classe': residuo.classe if defined('residuo.classe') else None,
+          'estado_fisico': residuo.estado_fisico if defined('residuo.estado_fisico') else None,
+          'quantidade_mensal': residuo.quantidade_mensal if defined('residuo.quantidade_mensal') else None,
+          'unidade': residuo.unidade if defined('residuo.unidade') else None,
+          'acondicionamento': residuo.acondicionamento if defined('residuo.acondicionamento') else None,
+          'local_armazenamento': residuo.local_armazenamento if defined('residuo.local_armazenamento') else None,
+          'destinacao_atual': residuo.destinacao_atual if defined('residuo.destinacao_atual') else None,
+          'empresa_destinadora': residuo.empresa_destinadora if defined('residuo.empresa_destinadora') else None,
+          'frequencia_coleta': residuo.frequencia_coleta if defined('residuo.frequencia_coleta') else None
+        }
+        lista_residuos.append(dados)
+    return lista_residuos
+  
+  def extrair_responsavel_tecnico():
+    """Extrai dados do responsável técnico"""
+    return {
+      'nome': responsavel_tecnico.nome if defined('responsavel_tecnico.nome') else None,
+      'formacao': responsavel_tecnico.formacao if defined('responsavel_tecnico.formacao') else None,
+      'conselho': responsavel_tecnico.conselho if defined('responsavel_tecnico.conselho') else None,
+      'registro': responsavel_tecnico.registro if defined('responsavel_tecnico.registro') else None,
+      'cpf': limpar_cnpj(responsavel_tecnico.cpf) if defined('responsavel_tecnico.cpf') else None,
+      'email': responsavel_tecnico.email if defined('responsavel_tecnico.email') else None,
+      'telefone': limpar_telefone(responsavel_tecnico.telefone) if defined('responsavel_tecnico.telefone') else None,
+      'vinculo': responsavel_tecnico.vinculo if defined('responsavel_tecnico.vinculo') else None,
+      'empresa_consultoria': responsavel_tecnico.empresa_consultoria if defined('responsavel_tecnico.empresa_consultoria') else None
+    }
+---
+# Envio PGRS
+code: |
+  def enviar_dados_pgrs():
+    """Monta e envia payload do PGRS"""
+    payload = {
+      'tipo_entrevista': tipo_entrevista,
+      'protocolo': protocolo_entrevista,
+      'versao_entrevista': '1.0.0',
+      'data_inicio': data_inicio_entrevista.isoformat() if defined('data_inicio_entrevista') else None,
+      'data_conclusao': current_datetime().isoformat(),
+      'dados_cadastrais': extrair_dados_cadastrais(),
+      'contato': extrair_contato(),
+      'endereco': extrair_endereco(),
+      'localizacao': extrair_localizacao(),
+      'atividades': extrair_atividades(),
+      'residuos': extrair_residuos(),
+      'responsavel_tecnico': extrair_responsavel_tecnico()
+    }
+    
+    resposta = api_client.enviar_avaliacao(payload, validar_antes=True)
+    return resposta
+---
+# Conclusão PGRS
+event: tela_conclusao_pgrs
+question: |
+  ✅ PGRS Enviado com Sucesso!
+subquestion: |
+  <div style="text-align: center; margin: 2rem 0;">
+    <h1>🎉</h1>
+  </div>
+  
+  % if resultado_envio.sucesso:
+  <div class="alert alert-success">
+    ✅ Seus dados foram enviados e o PGRS está sendo elaborado.
+  </div>
+  
+  **Protocolo:** `${ resultado_envio.protocolo }`
+  
+  **Previsão de entrega:** 10 dias úteis
+  
+  % else:
+  <div class="alert alert-danger">
+    ❌ Erro: ${ resultado_envio.mensagem }
+  </div>
+  % endif
+
+buttons:
+  - "🔄 Novo PGRS": restart
+  - "🚪 Sair": exit

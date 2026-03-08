@@ -1,0 +1,164 @@
+---
+# =============================================================================
+# BLOCO: Serviços Ofertados
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Coleta informações sobre serviços comerciais do posto
+# =============================================================================
+
+---
+objects:
+  - servicos: DAObject
+---
+question: |
+  🛒 Serviços Comerciais Ofertados
+subquestion: |
+  Selecione todos os serviços que o estabelecimento oferece além da 
+  revenda de combustíveis.
+  
+  Essas informações ajudam a caracterizar **potenciais fontes de contaminação** 
+  e **áreas de risco ambiental**.
+
+section: infraestrutura
+fields:
+  - note: |
+      **Serviços Principais:**
+  
+  - "Loja de conveniência": servicos.conveniencia
+    datatype: yesnoradio
+    default: False
+    help: |
+      Loja dentro do posto para venda de produtos diversos
+  
+  - "Borracharia": servicos.borracharia
+    datatype: yesnoradio
+    default: False
+    help: |
+      Serviço de conserto/troca de pneus
+  
+  - "Lava-jato": servicos.lava_jato
+    datatype: yesnoradio
+    default: False
+    help: |
+      Lavagem de veículos (⚠️ importante para análise de efluentes)
+  
+  - "Troca de óleo": servicos.troca_oleo
+    datatype: yesnoradio
+    default: False
+    help: |
+      Serviço de troca de óleo lubrificante
+  
+  - note: |
+      ---
+      **Outros Serviços:**
+  
+  - "Calibração de pneus": servicos.calibragem
+    datatype: yesnoradio
+    default: False
+  
+  - "Alinhamento/Balanceamento": servicos.alinhamento
+    datatype: yesnoradio
+    default: False
+  
+  - "Restaurante/Lanchonete": servicos.restaurante
+    datatype: yesnoradio
+    default: False
+    help: |
+      Estabelecimento com cozinha industrial
+  
+  - "Outros serviços": servicos.outros
+    datatype: area
+    required: False
+    rows: 3
+    help: |
+      Descreva outros serviços não listados acima
+
+continue button field: servicos_preenchido
+---
+# =============================================================================
+# CÓDIGO: Processar dados de serviços
+# =============================================================================
+code: |
+  # Lista de serviços ativos para uso no payload
+  servicos_ativos = []
+  
+  if servicos.conveniencia:
+      servicos_ativos.append("Loja de conveniência")
+  if servicos.borracharia:
+      servicos_ativos.append("Borracharia")
+  if servicos.lava_jato:
+      servicos_ativos.append("Lava-jato")
+  if servicos.troca_oleo:
+      servicos_ativos.append("Troca de óleo")
+  if servicos.calibragem:
+      servicos_ativos.append("Calibração de pneus")
+  if servicos.alinhamento:
+      servicos_ativos.append("Alinhamento/Balanceamento")
+  if servicos.restaurante:
+      servicos_ativos.append("Restaurante/Lanchonete")
+  
+  # Flag para validação
+  tem_servicos_comerciais = len(servicos_ativos) > 0
+---
+# =============================================================================
+# VALIDAÇÃO: Alertas baseados em serviços
+# =============================================================================
+code: |
+  # Alertas automáticos para o relatório
+  alertas_servicos = []
+  
+  if servicos.lava_jato:
+      alertas_servicos.append({
+          "tipo": "ambiental",
+          "severidade": "media",
+          "mensagem": "Lava-jato presente: verificar sistema de tratamento de efluentes (caixa separadora água-óleo)",
+          "norma": "Resolução CONAMA 430/2011"
+      })
+  
+  if servicos.troca_oleo:
+      alertas_servicos.append({
+          "tipo": "ambiental",
+          "severidade": "media",
+          "mensagem": "Troca de óleo: verificar armazenamento de óleo usado e destinação adequada",
+          "norma": "Resolução CONAMA 362/2005"
+      })
+  
+  if servicos.restaurante:
+      alertas_servicos.append({
+          "tipo": "ambiental",
+          "severidade": "baixa",
+          "mensagem": "Restaurante/Lanchonete: verificar caixa de gordura e gestão de resíduos orgânicos",
+          "norma": "ABNT NBR 8160"
+      })
+---
+# =============================================================================
+# RESUMO: Para exibição na tela final
+# =============================================================================
+template: resumo_servicos
+content: |
+  ### 🛒 Serviços Comerciais
+  
+  % if tem_servicos_comerciais:
+  **Serviços ativos:** ${ ", ".join(servicos_ativos) }
+  % else:
+  Apenas revenda de combustíveis
+  % endif
+  
+  % if servicos.outros:
+  
+  **Outros serviços:**  
+  ${ servicos.outros }
+  % endif
+  
+  % if len(alertas_servicos) > 0:
+  
+  ---
+  
+  ⚠️ **Pontos de atenção ambiental:**
+  
+  % for alerta in alertas_servicos:
+  - **${ alerta['mensagem'] }**  
+    _Referência: ${ alerta['norma'] }_
+  % endfor
+  % endif

@@ -1,0 +1,97 @@
+# src/docassemble/interviews/_blocos/bloco-localizacao.yml
+---
+# =============================================================================
+# 🧱 BLOCO REUTILIZÁVEL: LOCALIZAÇÃO GEOGRÁFICA
+# =============================================================================
+# Coleta coordenadas, área, arquivos KMZ
+# Usado em: Passivo, Licenciamento, Monitoramento
+# =============================================================================
+
+id: localizacao
+question: |
+  🗺️ Localização Geográfica
+subquestion: |
+  Informe a localização geográfica do empreendimento.
+  
+  <div class="alert alert-info">
+    💡 <strong>Dicas:</strong>
+    <ul>
+      <li>Use Google Maps ou Google Earth para obter coordenadas</li>
+      <li>Arquivos KMZ/KML podem ser exportados do Google Earth</li>
+      <li>Coordenadas negativas para Sul e Oeste</li>
+    </ul>
+  </div>
+  
+  <small class="text-muted">
+  Todos os campos são opcionais. Você pode avançar e retornar depois.
+  </small>
+
+fields:
+  - note: |
+      #### 📍 Coordenadas Geográficas
+      
+  - "Latitude": localizacao.latitude
+    datatype: number
+    required: False
+    hint: "Ex: -23.5505 (negativo para Sul)"
+    min: -90
+    max: 90
+    
+  - "Longitude": localizacao.longitude
+    datatype: number
+    required: False
+    hint: "Ex: -46.6333 (negativo para Oeste)"
+    min: -180
+    max: 180
+    
+  - "Como obteve as coordenadas?": localizacao.coordenadas_origem
+    required: False
+    input type: radio
+    choices:
+      - "GPS/Celular": gps
+      - "Google Maps": mapa
+      - "Arquivo KMZ": kmz
+      - "Manual": manual
+  
+  - note: |
+      ---
+      #### 📐 Área do Terreno
+      
+  - "Área (m²)": localizacao.area_m2
+    datatype: number
+    required: False
+    hint: "Área aproximada em metros quadrados"
+    min: 0
+    
+  - note: |
+      ---
+      #### 📁 Arquivos Geoespaciais (Opcional)
+      
+  - "Arquivo KMZ/KML": localizacao.arquivo_kmz
+    datatype: file
+    required: False
+    accept: |
+      "application/vnd.google-earth.kmz, application/vnd.google-earth.kml+xml"
+    help: "Arquivo de delimitação da área exportado do Google Earth"
+
+continue button field: localizacao_preenchida
+---
+code: |
+  def extrair_localizacao():
+    """Extrai localização para envio à API"""
+    dados = {
+      'latitude': localizacao.latitude if defined('localizacao.latitude') else None,
+      'longitude': localizacao.longitude if defined('localizacao.longitude') else None,
+      'area_m2': localizacao.area_m2 if defined('localizacao.area_m2') else None,
+      'coordenadas_origem': localizacao.coordenadas_origem if defined('localizacao.coordenadas_origem') else None
+    }
+    
+    # Calcula área em hectares
+    if dados['area_m2']:
+      dados['area_ha'] = dados['area_m2'] / 10000
+    
+    # Arquivo KMZ será enviado separadamente via upload
+    if defined('localizacao.arquivo_kmz') and localizacao.arquivo_kmz:
+      dados['tem_arquivo_kmz'] = True
+    
+    return dados

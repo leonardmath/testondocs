@@ -1,0 +1,66 @@
+# docassemble/germinare/data/questions/_config/config-base.yml
+---
+# =============================================================================
+# CONFIGURAÇÃO BASE - Importada por todas as entrevistas
+# =============================================================================
+modules:
+  - docassemble.base.util
+  - docassemble.base.core
+  - .models
+  - .validators
+  - .sanitizers
+  - .api_client
+  - .utils
+  - requests
+  - re
+---
+# Configurações da API
+code: |
+  # Buscar de variáveis de ambiente ou config
+  API_BASE_URL = get_config('api_base_url', 'https://api.germinare.com')
+  API_KEY = get_config('api_key', 'sua-chave-aqui')
+  
+  # Inicializa cliente API
+  api_client = APIClient(
+    base_url=API_BASE_URL,
+    api_key=API_KEY,
+    timeout=30
+  )
+---
+# Features globais
+features:
+  navigation: True
+  progress bar: True
+  question back button: True
+  question help button: True
+  show login: False
+  javascript: |
+    <script>
+      $(document).on('daPageLoad', function(){
+        // Feedback visual de salvamento
+        $('form').on('change', 'input, select, textarea', function(){
+          $(this).closest('.da-form-group').addClass('da-modified');
+          if (!$('#autosave-toast').length) {
+            $('body').append('<div id="autosave-toast" style="position:fixed;bottom:20px;right:20px;background:#28a745;color:white;padding:10px 20px;border-radius:5px;display:none;z-index:9999;">💾 Salvo</div>');
+          }
+          $('#autosave-toast').fadeIn().delay(1500).fadeOut();
+        });
+      });
+    </script>
+  css: |
+    <style>
+      .status-completo { color: #28a745; font-weight: bold; }
+      .status-pendente { color: #ffc107; font-weight: bold; }
+      .status-vazio { color: #dc3545; }
+      .alert-critico { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+      .alert-importante { background: #fff3cd; border-color: #ffeeba; color: #856404; }
+      .alert-aviso { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+    </style>
+---
+# Objetos comuns
+objects:
+  - dados_cadastrais: DAObject
+  - contato: DAObject
+  - endereco: DAObject
+  - localizacao: DAObject
+  - documentos: DAFileList

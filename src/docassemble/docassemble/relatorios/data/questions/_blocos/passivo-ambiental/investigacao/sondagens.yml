@@ -1,0 +1,248 @@
+---
+# =============================================================================
+# BLOCO: Sondagens e Investigação Ambiental
+# =============================================================================
+# Domínio: Passivo Ambiental
+# Versão: 1.0.0
+# Descrição: Dados de sondagens paramétricas e investigação de subsolo
+# =============================================================================
+
+---
+objects:
+  - sondagens: DAList.using(object_type=DAObject, there_are_any=True)
+---
+question: |
+  🔬 Investigação Ambiental - Sondagens
+subquestion: |
+  Foi realizada investigação ambiental com execução de sondagens no local?
+  
+  > Sondagens são essenciais para caracterização do subsolo e água subterrânea.
+
+section: investigacao
+field: realizou_sondagens
+buttons:
+  - "Sim": True
+  - "Não": False
+---
+question: |
+  📊 Quantas sondagens foram executadas?
+fields:
+  - "Número de sondagens": sondagens.target_number
+    datatype: integer
+    min: 1
+    max: 50
+    default: 3
+    help: |
+      Normalmente são executadas 3-6 sondagens (montante, jusante, área fonte)
+---
+question: |
+  🔬 Sondagem ${ i + 1 } de ${ sondagens.target_number }
+subquestion: |
+  Dados técnicos da sondagem executada.
+fields:
+  - note: |
+      **📋 Identificação**
+  
+  - "ID da sondagem": sondagens[i].id
+    default: ${ f"SD-{i+1:02d}" }
+    hint: "Ex: SD-01, PM-01, etc"
+  
+  - "Data de execução": sondagens[i].data_execucao
+    datatype: date
+    max: ${ today() }
+  
+  - note: |
+      ---
+      **🛠️ Método e Equipamento**
+  
+  - "Método de perfuração": sondagens[i].metodo
+    code: |
+      [
+        "Trado manual",
+        "Trado mecanizado",
+        "Percussão (SPT)",
+        "Rotativa",
+        "Direct Push (Geoprobe)",
+        "Outro"
+      ]
+  
+  - "Especificar outro método": sondagens[i].metodo_outro
+    show if:
+      variable: sondagens[i].metodo
+      is: "Outro"
+  
+  - "Equipamento utilizado": sondagens[i].equipamento
+    required: False
+    hint: "Ex: Trado helicoidal 4', Sonda rotativa, etc"
+  
+  - note: |
+      ---
+      **📏 Profundidades**
+  
+  - "Profundidade total (m)": sondagens[i].profundidade_total
+    datatype: number
+    min: 0.5
+    max: 100
+    hint: "Profundidade máxima atingida"
+  
+  - "Nível d'água (m)": sondagens[i].nivel_agua
+    datatype: number
+    min: 0
+    required: False
+    hint: "Profundidade do lençol freático (deixe vazio se não atingido)"
+  
+  - note: |
+      ---
+      **🗺️ Localização**
+  
+  - "Coordenada Norte (UTM)": sondagens[i].coord_norte
+    datatype: number
+    required: False
+    hint: "Opcional: coordenada UTM Norte"
+  
+  - "Coordenada Leste (UTM)": sondagens[i].coord_leste
+    datatype: number
+    required: False
+    hint: "Opcional: coordenada UTM Leste"
+  
+  - note: |
+      ---
+      **🪨 Descrição Litológica**
+  
+  - "Descrição do perfil do solo": sondagens[i].litologia
+    datatype: area
+    rows: 6
+    hint: |
+      Descreva as camadas de solo encontradas
+      Ex: 
+      0-1m: Solo argiloso avermelhado
+      1-3m: Solo siltoso amarelo
+      3-5m: Argila cinza (saturada)
+  
+  - note: |
+      ---
+      **🎯 Objetivo**
+  
+  - "Objetivo da sondagem": sondagens[i].objetivo
+    required: False
+    code: |
+      [
+        "Caracterização litológica",
+        "Definição do nível d'água",
+        "Instalação de poço de monitoramento",
+        "Coleta de amostras de solo",
+        "Investigação de contaminação",
+        "Outro"
+      ]
+  
+  - note: |
+      ---
+      **📸 Documentação**
+  
+  - "Possui registro fotográfico?": sondagens[i].tem_fotos
+    datatype: yesnoradio
+    default: True
+  
+  - "Possui perfil geológico (PDF)?": sondagens[i].tem_perfil
+    datatype: yesnoradio
+    default: True
+---
+# =============================================================================
+# CÓDIGO: Processamento de sondagens
+# =============================================================================
+code: |
+  # Estatísticas gerais
+  total_sondagens = len(sondagens)
+  prof_media = sum([s.profundidade_total for s in sondagens]) / total_sondagens if total_sondagens > 0 else 0
+  prof_maxima = max([s.profundidade_total for s in sondagens]) if total_sondagens > 0 else 0
+  
+  # Análise do nível d'água
+  sondagens_com_na = [s for s in sondagens if hasattr(s, 'nivel_agua') and s.nivel_agua is not None]
+  
+  if len(sondagens_com_na) > 0:
+    na_medio = sum([s.nivel_agua for s in sondagens_com_na]) / len(sondagens_com_na)
+    na_mais_raso = min([s.nivel_agua for s in sondagens_com_na])
+    na_mais_profundo = max([s.nivel_agua for s in sondagens_com_na])
+    atingiu_nivel_agua = True
+  else:
+    na_medio = None
+    na_mais_raso = None
+    na_mais_profundo = None
+    atingiu_nivel_agua = False
+  
+  # Payload para API
+  sondagens_payload = []
+  for sondagem in sondagens:
+    sondagens_payload.append({
+      "id": sondagem.id,
+      "data_execucao": sondagem.data_execucao.format('yyyy-MM-dd'),
+      "metodo": sondagem.metodo if sondagem.metodo != "Outro" else sondagem.metodo_outro,
+      "equipamento": sondagem.equipamento if hasattr(sondagem, 'equipamento') else None,
+      "profundidade_total_m": sondagem.profundidade_total,
+      "nivel_agua_m": sondagem.nivel_agua if hasattr(sondagem, 'nivel_agua') else None,
+      "coordenadas": {
+        "norte_utm": sondagem.coord_norte if hasattr(sondagem, 'coord_norte') else None,
+        "leste_utm": sondagem.coord_leste if hasattr(sondagem, 'coord_leste') else None
+      },
+      "descricao_litologica": sondagem.litologia,
+      "objetivo": sondagem.objetivo if hasattr(sondagem, 'objetivo') else None,
+      "documentacao": {
+        "fotos": sondagem.tem_fotos if hasattr(sondagem, 'tem_fotos') else False,
+        "perfil_geologico": sondagem.tem_perfil if hasattr(sondagem, 'tem_perfil') else False
+      }
+    })
+  
+  sondagens_preenchido = True
+---
+# =============================================================================
+# RESUMO: Template para exibição
+# =============================================================================
+template: resumo_sondagens
+content: |
+  ### 🔬 Investigação Ambiental
+  
+  % if realizou_sondagens:
+  **Sondagens executadas:** ${ total_sondagens }  
+  **Profundidade média:** ${ f"{prof_media:.1f}" } m  
+  **Profundidade máxima:** ${ f"{prof_maxima:.1f}" } m
+  
+  % if atingiu_nivel_agua:
+  
+  **Nível d'água:**
+  - Mais raso: ${ f"{na_mais_raso:.2f}" } m
+  - Mais profundo: ${ f"{na_mais_profundo:.2f}" } m
+  - Média: ${ f"{na_medio:.2f}" } m
+  % else:
+  
+  ⚠️ Nível d'água não atingido nas sondagens
+  % endif
+  
+  ---
+  
+  **Detalhamento:**
+  
+  % for sondagem in sondagens:
+  **${ sondagem.id }** - ${ sondagem.data_execucao.format('dd/MM/yyyy') }
+  - Método: ${ sondagem.metodo }
+  - Profundidade: ${ sondagem.profundidade_total } m
+  % if hasattr(sondagem, 'nivel_agua') and sondagem.nivel_agua:
+  - Nível d'água: ${ sondagem.nivel_agua } m
+  % endif
+  % if hasattr(sondagem, 'objetivo') and sondagem.objetivo:
+  - Objetivo: ${ sondagem.objetivo }
+  % endif
+  
+  _Litologia:_
+  ${ sondagem.litologia.replace('\n', '  \n') }
+  
+  ---
+  % endfor
+  
+  % else:
+  
+  ❌ **Não foram realizadas sondagens**
+  
+  > ⚠️ Recomenda-se a execução de investigação ambiental para caracterização 
+  > adequada do subsolo e água subterrânea conforme Resolução CONAMA 420/2009.
+  
+  % endif
